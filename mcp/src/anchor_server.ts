@@ -16,8 +16,8 @@ const ANCHORS_DIR = path.resolve(
 function loadAnchorFiles(): { id: string; anchor: Record<string, unknown> }[] {
   return fs
     .readdirSync(ANCHORS_DIR)
-    .filter((f) => f.endsWith(".json") && f !== "anchors.md")
-    .map((f) => ({
+    .filter((f: string) => f.endsWith(".json") && f !== "anchors.md")
+    .map((f: string) => ({
       id: f.replace(".json", ""),
       anchor: JSON.parse(fs.readFileSync(path.join(ANCHORS_DIR, f), "utf8")),
     }));

@@ -459,3 +459,6 @@ val csvSchema = evaluationInfo.datasetInfo
 10. **Questionnaire is Proto:** `QuestionnaireDataProto` (not JSON)
 
 ---
+## Shared contracts
+
+`service-interfaces` (`/Users/sladjan/git/service-interfaces`) — protobuf definitions compiled via ScalaPB. Defines `GroupRecordProto`, `InsightsDataRecordProto`, and related types consumed by the review service and the backend service. Changes here require a version bump in downstream `build.sbt` files before they take effect.
