@@ -28,6 +28,3 @@ Focus on:
 - batching opportunities
 - enum / constant hygiene
 - suggested improvements
-
----
-*Stage end — update anchor: resume + next + delta note.*
