@@ -6,10 +6,9 @@ import path from "path";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const ANCHORS_DIR = path.resolve(
-  path.dirname(new URL(import.meta.url).pathname),
-  "../../anchors"
-);
+const ANCHORS_DIR = process.env.TWIN_MEMORY_DIR
+  ? path.join(process.env.TWIN_MEMORY_DIR, "anchors")
+  : path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../twin-memory/anchors");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
