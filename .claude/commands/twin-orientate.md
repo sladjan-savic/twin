@@ -2,29 +2,34 @@ Assess whether the current session's work warrants an orientation map update. Fo
 
 ## Step 1 — Pre-flight
 
-Read all existing files in /Users/sladjan/git/twin/orientation/ (filenames only, not content).
-Compare the current ticket's subdomain and scope against them.
+Call orientation_load with the current ticket's subdomain to check what already exists.
+Compare the current work against what was returned.
 
 Decide one of three outcomes:
-- ENRICH: work fits inside an existing doc (sub-feature, new ticket pattern, correction)
-- CREATE: cross-cutting concern with its own ticket shape, no existing doc covers it
-- DISCARD: no new navigation value — existing docs already cover it accurately
+- ENRICH: work fits inside an existing map (new ticket pattern, correction)
+- CREATE: new subdomain with its own ticket shape, no existing map covers it
+- DISCARD: no new navigation value — existing map already covers it accurately
 
 State your decision and one-sentence justification. Stop and ask for confirmation before proceeding.
 
 ## Step 2 — Compose (on confirmation only)
 
-If ENRICH: read the full target file into memory. Compose the complete updated version in memory. Do not produce intermediate states.
-If CREATE: compose a complete new file in memory using /Users/sladjan/git/twin/orientation/TEMPLATE — Developer Orientation Map.md as the structure. Do not reference the template in the output.
+If ENRICH: load the existing map via orientation_load. Compose the complete updated version in memory.
+If CREATE: compose a complete new map in memory using the orientation template structure. Load the template via orientation_load with intent "TEMPLATE".
 
 Rules:
 - Section 5 (Ticket Patterns → Entry Points) is the product. Everything else is scaffolding.
-- Ticket pattern headings must be written as problems a developer would report, not as implementation descriptions.
-- Verify every file path against the actual codebase before writing it.
-- Delete the rules and scope guard section before writing the final file.
-- One atomic file_write. No partial edits.
+- Ticket pattern headings must be problems a developer would report, not implementation descriptions.
+- Verify every file path against the actual codebase before writing.
+- Do not include the rules and scope guard section in the final output.
+- Compose the complete file in memory before writing. No partial drafts.
 
-## Step 3 — Write
+## Step 3 — Save
 
-Write the complete composed file in a single operation to /Users/sladjan/git/twin/orientation/.
-Confirm the filename and action taken (enriched / created / discarded).
+Call orientation_save with:
+- id: kebab-case slug of the domain (e.g. "dataset-groupby")
+- domain: human-readable name (e.g. "Dataset GroupBy")
+- keywords: array of match terms
+- content: the complete composed markdown
+
+Confirm: "Orientation map [id] saved ([enriched|created])."
