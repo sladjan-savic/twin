@@ -1,140 +1,287 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import fs from "fs";
 import path from "path";
+// @ts-ignore — node:sqlite experimental in Node 24
+import { DatabaseSync } from "node:sqlite";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const ANCHORS_DIR = process.env.TWIN_MEMORY_DIR
-  ? path.join(process.env.TWIN_MEMORY_DIR, "anchors")
-  : path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../twin-memory/anchors");
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function loadAnchorFiles(): { id: string; anchor: Record<string, unknown> }[] {
-  return fs
-    .readdirSync(ANCHORS_DIR)
-    .filter((f: string) => f.endsWith(".json") && f !== "anchors.md")
-    .map((f: string) => ({
-      id: f.replace(".json", ""),
-      anchor: JSON.parse(fs.readFileSync(path.join(ANCHORS_DIR, f), "utf8")),
-    }));
-}
-
-function matchAnchor(intent: string, anchors: ReturnType<typeof loadAnchorFiles>) {
-  const q = intent.toLowerCase();
-  return anchors.find(({ id, anchor }) => {
-    const identity = anchor.identity as Record<string, string>;
-    return (
-      id.toLowerCase().includes(q) ||
-      identity?.tag?.toLowerCase().includes(q) ||
-      identity?.anchor_id?.toLowerCase().includes(q) ||
-      // match ticket numbers e.g. "172099103" or "ticket://172099103"
-      q.replace(/[^0-9]/g, "") && id.includes(q.replace(/[^0-9]/g, ""))
+const DB_PATH = process.env.TWIN_MEMORY_DIR
+  ? path.join(process.env.TWIN_MEMORY_DIR, "twin.db")
+  : path.resolve(
+      path.dirname(new URL(import.meta.url).pathname),
+      "../../../twin-memory/twin.db"
     );
-  });
-}
 
-function updateIndex(anchorId: string) {
-  const indexPath = path.join(ANCHORS_DIR, "anchors.md");
-  const content = fs.readFileSync(indexPath, "utf8");
-  if (content.includes(anchorId)) return; // already indexed
+// ─── Database ─────────────────────────────────────────────────────────────────
 
-  const entry = `     ${anchorId}.json`;
-  // Insert before closing comment
-  const updated = content.replace("-->", `${entry}\n-->`);
-  fs.writeFileSync(indexPath, updated, "utf8");
-}
+const db = new DatabaseSync(DB_PATH);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS anchors (
+    anchor_id   TEXT PRIMARY KEY,
+    anchor_type TEXT NOT NULL,
+    tag         TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    state       TEXT NOT NULL,
+    resume      TEXT NOT NULL,
+    next        TEXT NOT NULL,
+    delta       TEXT,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS adls (
+    adl_id      TEXT PRIMARY KEY,
+    tag         TEXT,
+    name        TEXT NOT NULL,
+    type        TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    content     TEXT NOT NULL,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS orientation_maps (
+    id          TEXT PRIMARY KEY,
+    domain      TEXT NOT NULL,
+    keywords    TEXT NOT NULL,
+    content     TEXT NOT NULL,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS test_plans (
+    id          TEXT PRIMARY KEY,
+    radar_id    TEXT,
+    anchor_id   TEXT,
+    title       TEXT,
+    content     TEXT NOT NULL,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+`);
 
 // ─── Server ───────────────────────────────────────────────────────────────────
 
-const server = new McpServer({
-  name: "twin-anchor",
-  version: "1.0.0",
-});
+const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
 
-// ─── Tool: anchor_load ───────────────────────────────────────────────────────
+// ─── anchor_load ─────────────────────────────────────────────────────────────
 
 server.tool(
   "anchor_load",
-  "Find and load an anchor by intent, tag, ticket ID, or anchor_id. Returns identity, state, resume, and next fields.",
+  "Find and load an anchor by intent, tag, ticket ID, or anchor_id.",
   { intent: z.string().describe("Ticket ID, anchor tag, or natural language intent") },
   async ({ intent }) => {
-    const anchors = loadAnchorFiles();
-    const match = matchAnchor(intent, anchors);
+    const q = `%${intent.toLowerCase()}%`;
+    const numOnly = intent.replace(/[^0-9]/g, "");
 
-    if (!match) {
+    const row = db.prepare(`
+      SELECT * FROM anchors
+      WHERE LOWER(anchor_id) LIKE ? OR LOWER(tag) LIKE ?
+         OR (? != '' AND anchor_id LIKE ?)
+      LIMIT 1
+    `).get(q, q, numOnly, `%${numOnly}%`) as Record<string, unknown> | undefined;
+
+    if (!row) {
+      const all = db.prepare(
+        "SELECT anchor_id, status FROM anchors ORDER BY updated_at DESC"
+      ).all() as { anchor_id: string; status: string }[];
       return {
         content: [{
           type: "text",
-          text: `No anchor found for: "${intent}". Available anchors:\n` +
-            anchors.map(({ id, anchor }) => {
-              const identity = anchor.identity as Record<string, string>;
-              return `  - ${id} [${identity?.status ?? "unknown"}]`;
-            }).join("\n"),
+          text: `No anchor found for: "${intent}". Available:\n` +
+            all.map((a) => `  - ${a.anchor_id} [${a.status}]`).join("\n"),
         }],
       };
     }
 
-    const { identity, state, resume, next } = match.anchor as {
-      identity: unknown;
-      state: string;
-      resume: string;
-      next: string[];
-    };
-
+    const { anchor_id, tag, anchor_type, status, state, resume, next } = row as any;
     return {
       content: [{
         type: "text",
-        text: JSON.stringify({ identity, state, resume, next }, null, 2),
+        text: JSON.stringify(
+          { identity: { tag, anchor_id, anchor_type, status }, state, resume,
+            next: JSON.parse(next) },
+          null, 2
+        ),
       }],
     };
   }
 );
 
-// ─── Tool: anchor_save ───────────────────────────────────────────────────────
-
-const AnchorSchema = z.object({
-  anchor_id:   z.string().describe("e.g. anchor-ticket-172099103"),
-  tag:         z.string().describe("e.g. #{ticket-172099103-SHORT-NAME}"),
-  anchor_type: z.string().describe("ticket | poc | technique | design"),
-  status:      z.string().describe("in_progress | active | resolved | merged"),
-  state:       z.string().describe("One paragraph — what is true right now"),
-  resume:      z.string().describe("One sentence — where to pick up"),
-  next:        z.array(z.string()).describe("Ordered list of next actions"),
-  delta:       z.string().describe("Dated changelog entry for this save"),
-});
+// ─── anchor_save ─────────────────────────────────────────────────────────────
 
 server.tool(
   "anchor_save",
-  "Create or update an anchor file. Writes flat-format JSON and updates the index.",
-  { anchor: AnchorSchema },
+  "Create or update an anchor in SQLite.",
+  {
+    anchor: z.object({
+      anchor_id:   z.string(),
+      tag:         z.string(),
+      anchor_type: z.string(),
+      status:      z.string(),
+      state:       z.string(),
+      resume:      z.string(),
+      next:        z.array(z.string()),
+      delta:       z.string(),
+    }),
+  },
   async ({ anchor }) => {
     const { anchor_id, tag, anchor_type, status, state, resume, next, delta } = anchor;
+    db.prepare(`
+      INSERT OR REPLACE INTO anchors
+        (anchor_id, tag, anchor_type, status, state, resume, next, delta, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).run(anchor_id, tag, anchor_type, status, state, resume, JSON.stringify(next), delta);
+    return { content: [{ type: "text", text: `Saved anchor: ${anchor_id}` }] };
+  }
+);
 
-    const payload = {
-      identity: { tag, anchor_id, anchor_type, status },
-      state,
-      resume,
-      next,
-      delta,
-    };
+// ─── orientation_load ────────────────────────────────────────────────────────
 
-    const filePath = path.join(ANCHORS_DIR, `${anchor_id}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(payload, null, 4), "utf8");
-    updateIndex(anchor_id);
+server.tool(
+  "orientation_load",
+  "Load an orientation map by domain name or keyword. Returns the full markdown content.",
+  { intent: z.string().describe("Domain name, subdomain, or keyword e.g. 'GroupBy', 'CSV upload'") },
+  async ({ intent }) => {
+    const q = `%${intent.toLowerCase()}%`;
+
+    const row = db.prepare(`
+      SELECT * FROM orientation_maps
+      WHERE LOWER(domain) LIKE ? OR LOWER(keywords) LIKE ? OR LOWER(id) LIKE ?
+      LIMIT 1
+    `).get(q, q, q) as { id: string; domain: string; content: string } | undefined;
+
+    if (!row) {
+      const all = db.prepare(
+        "SELECT id, domain FROM orientation_maps ORDER BY domain"
+      ).all() as { id: string; domain: string }[];
+      return {
+        content: [{
+          type: "text",
+          text: `No orientation map found for: "${intent}". Available:\n` +
+            all.map((m) => `  - ${m.id} (${m.domain})`).join("\n"),
+        }],
+      };
+    }
 
     return {
-      content: [{
-        type: "text",
-        text: `Saved: ${anchor_id}.json`,
-      }],
+      content: [{ type: "text", text: `# ${row.domain}\n\n${row.content}` }],
     };
   }
 );
 
-// ─── Start ───────────────────────────────────────────────────────────────────
+// ─── orientation_save ────────────────────────────────────────────────────────
+
+server.tool(
+  "orientation_save",
+  "Create or update an orientation map. Content must be valid markdown following the orientation template.",
+  {
+    id:       z.string().describe("Slug e.g. 'dataset-groupby'"),
+    domain:   z.string().describe("Human-readable domain name"),
+    keywords: z.array(z.string()).describe("Match keywords for retrieval"),
+    content:  z.string().describe("Full markdown content"),
+  },
+  async ({ id, domain, keywords, content }) => {
+    db.prepare(`
+      INSERT OR REPLACE INTO orientation_maps (id, domain, keywords, content, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `).run(id, domain, JSON.stringify(keywords), content);
+    return { content: [{ type: "text", text: `Saved orientation map: ${id}` }] };
+  }
+);
+
+// ─── adl_load ────────────────────────────────────────────────────────────────
+
+server.tool(
+  "adl_load",
+  "Load an architectural design log entry by ADL ID or tag.",
+  { intent: z.string().describe("ADL ID (e.g. 'ADL-08') or tag") },
+  async ({ intent }) => {
+    const q = `%${intent.toLowerCase()}%`;
+
+    const row = db.prepare(`
+      SELECT * FROM adls
+      WHERE LOWER(adl_id) LIKE ? OR LOWER(tag) LIKE ? OR LOWER(name) LIKE ?
+      LIMIT 1
+    `).get(q, q, q) as { adl_id: string; name: string; content: string } | undefined;
+
+    if (!row) {
+      const all = db.prepare(
+        "SELECT adl_id, name, status FROM adls ORDER BY adl_id"
+      ).all() as { adl_id: string; name: string; status: string }[];
+      return {
+        content: [{
+          type: "text",
+          text: `No ADL found for: "${intent}". Available:\n` +
+            all.map((a) => `  - ${a.adl_id}: ${a.name} [${a.status}]`).join("\n"),
+        }],
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: row.content }],
+    };
+  }
+);
+
+// ─── test_plan_load ──────────────────────────────────────────────────────────
+
+server.tool(
+  "test_plan_load",
+  "Load a test plan by ticket ID, anchor ID, or title.",
+  { intent: z.string().describe("Ticket ID, anchor ID, or title keyword") },
+  async ({ intent }) => {
+    const q = `%${intent.toLowerCase()}%`;
+    const numOnly = intent.replace(/[^0-9]/g, "");
+
+    const row = db.prepare(`
+      SELECT * FROM test_plans
+      WHERE LOWER(id) LIKE ? OR LOWER(title) LIKE ?
+         OR (? != '' AND radar_id LIKE ?)
+      LIMIT 1
+    `).get(q, q, numOnly, `%${numOnly}%`) as
+      { id: string; title: string; content: string } | undefined;
+
+    if (!row) {
+      const all = db.prepare(
+        "SELECT id, radar_id, title FROM test_plans ORDER BY updated_at DESC"
+      ).all() as { id: string; radar_id: string; title: string }[];
+      return {
+        content: [{
+          type: "text",
+          text: `No test plan found for: "${intent}". Available:\n` +
+            all.map((t) => `  - ${t.id} (${t.radar_id ?? "no ticket"})`).join("\n"),
+        }],
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: row.content }],
+    };
+  }
+);
+
+// ─── test_plan_save ──────────────────────────────────────────────────────────
+
+server.tool(
+  "test_plan_save",
+  "Save a test plan. Links to an anchor and optional ticket ID.",
+  {
+    id:        z.string().describe("Slug e.g. 'ticket-173690700-user-display-names'"),
+    radar_id:  z.string().optional(),
+    anchor_id: z.string().optional(),
+    title:     z.string().optional(),
+    content:   z.string().describe("Full markdown test plan"),
+  },
+  async ({ id, radar_id, anchor_id, title, content }) => {
+    db.prepare(`
+      INSERT OR REPLACE INTO test_plans (id, radar_id, anchor_id, title, content, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `).run(id, radar_id ?? null, anchor_id ?? null, title ?? null, content);
+    return { content: [{ type: "text", text: `Saved test plan: ${id}` }] };
+  }
+);
+
+// ─── Start ────────────────────────────────────────────────────────────────────
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
