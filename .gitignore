@@ -1,2 +1,6 @@
 .DS_Store
 storage/twin.db
+anchors/
+adl/
+orientation/
+test_plans/
