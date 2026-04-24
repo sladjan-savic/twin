@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { loadAnchor, saveAnchor } from "./store/anchors.js";
-import { loadOrientation, saveOrientation, loadAdl, saveAdl, loadTestPlan, saveTestPlan } from "./store/knowledge.js";
+import { loadOrientation, findOrientations, saveOrientation, loadAdl, saveAdl, loadTestPlan, saveTestPlan, findPolicies, loadPolicy, savePolicy } from "./store/knowledge.js";
 
 const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
 
@@ -55,6 +55,19 @@ server.registerTool(
 );
 
 server.registerTool(
+  "orientation_find",
+  {
+    description: "Find orientation maps by tags. Returns ranked matches by keyword overlap score.",
+    inputSchema: {
+      tags: z.array(z.string()).describe("Intent keywords to match against orientation map keywords"),
+    },
+  },
+  async ({ tags }) => ({
+    content: [{ type: "text", text: findOrientations(tags) }],
+  })
+);
+
+server.registerTool(
   "orientation_save",
   {
     description: "Create or update an orientation map. Content must be valid markdown following the orientation template.",
@@ -67,6 +80,51 @@ server.registerTool(
   },
   async ({ id, domain, keywords, content }) => ({
     content: [{ type: "text", text: saveOrientation(id, domain, keywords, content) }],
+  })
+);
+
+// ─── Policies ─────────────────────────────────────────────────────────────────
+
+server.registerTool(
+  "policy_find",
+  {
+    description: "Find policies by trigger tags. Returns ranked matches by keyword overlap score.",
+    inputSchema: {
+      tags: z.array(z.string()).describe("Trigger keywords describing current situation e.g. ['stuck', 'no-progress', 'spiral']"),
+    },
+  },
+  async ({ tags }) => ({
+    content: [{ type: "text", text: findPolicies(tags) }],
+  })
+);
+
+server.registerTool(
+  "policy_load",
+  {
+    description: "Load a policy by id or name. Returns the full strategy.",
+    inputSchema: {
+      intent: z.string().describe("Policy id or name keyword"),
+    },
+  },
+  async ({ intent }) => ({
+    content: [{ type: "text", text: loadPolicy(intent) }],
+  })
+);
+
+server.registerTool(
+  "policy_save",
+  {
+    description: "Create or update a policy.",
+    inputSchema: {
+      id:           z.string().describe("Kebab-case slug e.g. 'no-progress-escalation'"),
+      name:         z.string(),
+      trigger_tags: z.array(z.string()).describe("Keywords that trigger this policy"),
+      strategy:     z.string().describe("Full strategy text the agent follows when this policy fires"),
+      status:       z.string().describe("active | draft | retired"),
+    },
+  },
+  async ({ id, name, trigger_tags, strategy, status }) => ({
+    content: [{ type: "text", text: savePolicy(id, name, trigger_tags, strategy, status) }],
   })
 );
 

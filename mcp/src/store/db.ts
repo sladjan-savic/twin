@@ -85,7 +85,19 @@ function migrate(version: number, sql: string): void {
 // v1 — initial schema (tables created via IF NOT EXISTS above)
 migrate(1, "SELECT 1");
 
-// v2+ — append here: migrate(2, "ALTER TABLE anchors ADD COLUMN ...");
+// v2 — policies table
+migrate(2, `
+  CREATE TABLE IF NOT EXISTS policies (
+    id           TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    trigger_tags TEXT NOT NULL,
+    strategy     TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'active',
+    updated_at   TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+// v3+ — append here: migrate(3, "ALTER TABLE ...");
 
 // ─── Failover write ───────────────────────────────────────────────────────────
 
@@ -96,6 +108,29 @@ export function writeWithFailover(
 ): { failover: boolean } {
   try {
     operation();
+    return { failover: false };
+  } catch {
+    const file = path.join(FAILOVER_DIR, `${Date.now()}_${label}.json`);
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    return { failover: true };
+  }
+}
+
+// Wraps multiple writes in a single transaction — use when saving 2+ records together.
+export function writeBatchWithFailover(
+  operations: Array<() => void>,
+  label: string,
+  data: unknown
+): { failover: boolean } {
+  try {
+    db.exec("BEGIN");
+    try {
+      operations.forEach((op) => op());
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    }
     return { failover: false };
   } catch {
     const file = path.join(FAILOVER_DIR, `${Date.now()}_${label}.json`);

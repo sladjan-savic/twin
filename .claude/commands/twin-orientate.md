@@ -2,19 +2,19 @@ Assess whether the current session's work warrants an orientation map update. Fo
 
 ## Step 1 — Pre-flight
 
-Call orientation_load with the current ticket's subdomain to check what already exists.
-Compare the current work against what was returned.
+Call orientation_find with keywords derived from the current ticket's subdomain (2–4 terms, e.g. ["dataset", "evaluation", "sample"]).
+Review the ranked results. If score ≥ 1 match exists, that is the candidate map.
 
 Decide one of three outcomes:
-- ENRICH: work fits inside an existing map (new ticket pattern, correction)
-- CREATE: new subdomain with its own ticket shape, no existing map covers it
+- ENRICH: a ranked match covers this subdomain (new ticket pattern, correction)
+- CREATE: no match — new subdomain with its own ticket shape
 - DISCARD: no new navigation value — existing map already covers it accurately
 
 State your decision and one-sentence justification. Stop and ask for confirmation before proceeding.
 
 ## Step 2 — Compose (on confirmation only)
 
-If ENRICH: load the existing map via orientation_load. Compose the complete updated version in memory.
+If ENRICH: call orientation_load with the matched map's id to get full content. Compose the complete updated version in memory.
 If CREATE: compose a complete new map in memory using the orientation template structure. Load the template via orientation_load with intent "TEMPLATE".
 
 Rules:
