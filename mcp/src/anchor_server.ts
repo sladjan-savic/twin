@@ -11,7 +11,7 @@ const DB_PATH = process.env.TWIN_MEMORY_DIR
   ? path.join(process.env.TWIN_MEMORY_DIR, "twin.db")
   : path.resolve(
       path.dirname(new URL(import.meta.url).pathname),
-      "../../../twin-memory/twin.db"
+      "../../storage/twin.db"
     );
 
 // ─── Database ─────────────────────────────────────────────────────────────────
@@ -70,15 +70,26 @@ server.tool(
   "Find and load an anchor by intent, tag, ticket ID, or anchor_id.",
   { intent: z.string().describe("Ticket ID, anchor tag, or natural language intent") },
   async ({ intent }) => {
-    const q = `%${intent.toLowerCase()}%`;
+    const intentLower = intent.toLowerCase();
+    const q = `%${intentLower}%`;
+    // Only use numeric extraction for proper ticket IDs (7+ digits); short strings like "1" from "V1" would match everything
     const numOnly = intent.replace(/[^0-9]/g, "");
+    const radarNum = numOnly.length >= 7 ? numOnly : "";
 
     const row = db.prepare(`
       SELECT * FROM anchors
       WHERE LOWER(anchor_id) LIKE ? OR LOWER(tag) LIKE ?
          OR (? != '' AND anchor_id LIKE ?)
+      ORDER BY
+        CASE
+          WHEN LOWER(tag)       = ?    THEN 1
+          WHEN LOWER(anchor_id) = ?    THEN 2
+          WHEN LOWER(tag)       LIKE ? THEN 3
+          WHEN LOWER(anchor_id) LIKE ? THEN 4
+          ELSE 5
+        END
       LIMIT 1
-    `).get(q, q, numOnly, `%${numOnly}%`) as Record<string, unknown> | undefined;
+    `).get(q, q, radarNum, `%${radarNum}%`, intentLower, intentLower, q, q) as Record<string, unknown> | undefined;
 
     if (!row) {
       const all = db.prepare(
@@ -230,15 +241,24 @@ server.tool(
   "Load a test plan by ticket ID, anchor ID, or title.",
   { intent: z.string().describe("Ticket ID, anchor ID, or title keyword") },
   async ({ intent }) => {
-    const q = `%${intent.toLowerCase()}%`;
+    const intentLower = intent.toLowerCase();
+    const q = `%${intentLower}%`;
     const numOnly = intent.replace(/[^0-9]/g, "");
+    const radarNum = numOnly.length >= 7 ? numOnly : "";
 
     const row = db.prepare(`
       SELECT * FROM test_plans
       WHERE LOWER(id) LIKE ? OR LOWER(title) LIKE ?
          OR (? != '' AND radar_id LIKE ?)
+      ORDER BY
+        CASE
+          WHEN LOWER(id)    = ?    THEN 1
+          WHEN LOWER(title) = ?    THEN 2
+          WHEN LOWER(id)    LIKE ? THEN 3
+          ELSE 4
+        END
       LIMIT 1
-    `).get(q, q, numOnly, `%${numOnly}%`) as
+    `).get(q, q, radarNum, `%${radarNum}%`, intentLower, intentLower, q) as
       { id: string; title: string; content: string } | undefined;
 
     if (!row) {

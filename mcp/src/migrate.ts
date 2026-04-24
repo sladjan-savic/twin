@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 
 const MEMORY_DIR = process.env.TWIN_MEMORY_DIR ?? path.resolve(
   path.dirname(new URL(import.meta.url).pathname),
-  "../../../twin-memory"
+  "../../storage"
 );
 
 const DB_PATH = path.join(MEMORY_DIR, "twin.db");
