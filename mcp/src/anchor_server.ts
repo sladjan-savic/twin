@@ -65,10 +65,12 @@ const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
 
 // ─── anchor_load ─────────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "anchor_load",
-  "Find and load an anchor by intent, tag, ticket ID, or anchor_id.",
-  { intent: z.string().describe("Ticket ID, anchor tag, or natural language intent") },
+  {
+    description: "Find and load an anchor by intent, tag, ticket ID, or anchor_id.",
+    inputSchema: { intent: z.string().describe("Ticket ID, anchor tag, or natural language intent") },
+  },
   async ({ intent }) => {
     const intentLower = intent.toLowerCase();
     const q = `%${intentLower}%`;
@@ -120,20 +122,22 @@ server.tool(
 
 // ─── anchor_save ─────────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "anchor_save",
-  "Create or update an anchor in SQLite.",
   {
-    anchor: z.object({
-      anchor_id:   z.string(),
-      tag:         z.string(),
-      anchor_type: z.string(),
-      status:      z.string(),
-      state:       z.string(),
-      resume:      z.string(),
-      next:        z.array(z.string()),
-      delta:       z.string(),
-    }),
+    description: "Create or update an anchor in SQLite.",
+    inputSchema: {
+      anchor: z.object({
+        anchor_id:   z.string(),
+        tag:         z.string(),
+        anchor_type: z.string(),
+        status:      z.string(),
+        state:       z.string(),
+        resume:      z.string(),
+        next:        z.array(z.string()),
+        delta:       z.string(),
+      }),
+    },
   },
   async ({ anchor }) => {
     const { anchor_id, tag, anchor_type, status, state, resume, next, delta } = anchor;
@@ -148,10 +152,12 @@ server.tool(
 
 // ─── orientation_load ────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "orientation_load",
-  "Load an orientation map by domain name or keyword. Returns the full markdown content.",
-  { intent: z.string().describe("Domain name, subdomain, or keyword e.g. 'GroupBy', 'CSV upload'") },
+  {
+    description: "Load an orientation map by domain name or keyword. Returns the full markdown content.",
+    inputSchema: { intent: z.string().describe("Domain name, subdomain, or keyword e.g. 'GroupBy', 'CSV upload'") },
+  },
   async ({ intent }) => {
     const q = `%${intent.toLowerCase()}%`;
 
@@ -182,14 +188,16 @@ server.tool(
 
 // ─── orientation_save ────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "orientation_save",
-  "Create or update an orientation map. Content must be valid markdown following the orientation template.",
   {
-    id:       z.string().describe("Slug e.g. 'dataset-groupby'"),
-    domain:   z.string().describe("Human-readable domain name"),
-    keywords: z.array(z.string()).describe("Match keywords for retrieval"),
-    content:  z.string().describe("Full markdown content"),
+    description: "Create or update an orientation map. Content must be valid markdown following the orientation template.",
+    inputSchema: {
+      id:       z.string().describe("Slug e.g. 'dataset-groupby'"),
+      domain:   z.string().describe("Human-readable domain name"),
+      keywords: z.array(z.string()).describe("Match keywords for retrieval"),
+      content:  z.string().describe("Full markdown content"),
+    },
   },
   async ({ id, domain, keywords, content }) => {
     db.prepare(`
@@ -202,10 +210,12 @@ server.tool(
 
 // ─── adl_load ────────────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "adl_load",
-  "Load an architectural design log entry by ADL ID or tag.",
-  { intent: z.string().describe("ADL ID (e.g. 'ADL-08') or tag") },
+  {
+    description: "Load an architectural design log entry by ADL ID or tag.",
+    inputSchema: { intent: z.string().describe("ADL ID (e.g. 'ADL-08') or tag") },
+  },
   async ({ intent }) => {
     const q = `%${intent.toLowerCase()}%`;
 
@@ -236,10 +246,12 @@ server.tool(
 
 // ─── test_plan_load ──────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "test_plan_load",
-  "Load a test plan by ticket ID, anchor ID, or title.",
-  { intent: z.string().describe("Ticket ID, anchor ID, or title keyword") },
+  {
+    description: "Load a test plan by ticket ID, anchor ID, or title.",
+    inputSchema: { intent: z.string().describe("Ticket ID, anchor ID, or title keyword") },
+  },
   async ({ intent }) => {
     const intentLower = intent.toLowerCase();
     const q = `%${intentLower}%`;
@@ -282,15 +294,17 @@ server.tool(
 
 // ─── test_plan_save ──────────────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "test_plan_save",
-  "Save a test plan. Links to an anchor and optional ticket ID.",
   {
-    id:        z.string().describe("Slug e.g. 'ticket-173690700-user-display-names'"),
-    radar_id:  z.string().optional(),
-    anchor_id: z.string().optional(),
-    title:     z.string().optional(),
-    content:   z.string().describe("Full markdown test plan"),
+    description: "Save a test plan. Links to an anchor and optional ticket ID.",
+    inputSchema: {
+      id:        z.string().describe("Slug e.g. 'ticket-173690700-user-display-names'"),
+      radar_id:  z.string().optional(),
+      anchor_id: z.string().optional(),
+      title:     z.string().optional(),
+      content:   z.string().describe("Full markdown test plan"),
+    },
   },
   async ({ id, radar_id, anchor_id, title, content }) => {
     db.prepare(`
