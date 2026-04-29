@@ -97,7 +97,18 @@ migrate(2, `
   )
 `);
 
-// v3+ — append here: migrate(3, "ALTER TABLE ...");
+// v3 — FTS5 cross-store search index (write-through cache; rebuild via context_reindex)
+migrate(3, `
+  CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+    item_id   UNINDEXED,
+    item_type UNINDEXED,
+    title,
+    abstract,
+    tags
+  )
+`);
+
+// v4+ — append here: migrate(4, "ALTER TABLE ...");
 
 // ─── Failover write ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,71 @@
+import { db, writeWithFailover } from "./db.js";
+import { indexItem } from "./search.js";
+
+export function loadOrientation(intent: string): string {
+  const q = `%${intent.toLowerCase()}%`;
+
+  const row = db.prepare(`
+    SELECT * FROM orientation_maps
+    WHERE LOWER(domain) LIKE ? OR LOWER(keywords) LIKE ? OR LOWER(id) LIKE ?
+    LIMIT 1
+  `).get(q, q, q) as { id: string; domain: string; content: string } | undefined;
+
+  if (!row) {
+    const all = db.prepare(
+      "SELECT id, domain FROM orientation_maps ORDER BY domain"
+    ).all() as { id: string; domain: string }[];
+    return `No orientation map found for: "${intent}". Available:\n` +
+      all.map((m) => `  - ${m.id} (${m.domain})`).join("\n");
+  }
+
+  return `# ${row.domain}\n\n${row.content}`;
+}
+
+export function findOrientations(tags: string[]): string {
+  const all = db.prepare(
+    "SELECT id, domain, keywords FROM orientation_maps ORDER BY domain"
+  ).all() as { id: string; domain: string; keywords: string }[];
+
+  const lowerTags = tags.map((t) => t.toLowerCase());
+
+  const scored = all
+    .map((row) => {
+      let kws: string[] = [];
+      try { kws = (JSON.parse(row.keywords) as string[]).map((k) => k.toLowerCase()); }
+      catch { kws = []; }
+      const score = kws.filter((k) => lowerTags.includes(k)).length;
+      return { id: row.id, domain: row.domain, keywords: kws, score };
+    })
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) {
+    return (
+      `No orientation maps matched tags: [${tags.join(", ")}]. Available:\n` +
+      all.map((m) => `  - ${m.id} (${m.domain})`).join("\n")
+    );
+  }
+
+  return scored
+    .map((r) => `[score:${r.score}] ${r.id} — ${r.domain} (keywords: ${r.keywords.join(", ")})`)
+    .join("\n");
+}
+
+export function saveOrientation(
+  id: string, domain: string, keywords: string[], content: string
+): string {
+  const { failover } = writeWithFailover(
+    () => db.prepare(`
+      INSERT OR REPLACE INTO orientation_maps (id, domain, keywords, content, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `).run(id, domain, JSON.stringify(keywords), content),
+    `orientation_${id}`,
+    { id, domain, keywords, content }
+  );
+
+  try {
+    indexItem(id, "orientation", domain, content.slice(0, 200), keywords.join(" "));
+  } catch { /* FTS is a cache — divergence recoverable via context_reindex */ }
+
+  return failover ? `Saved orientation map (failover): ${id}` : `Saved orientation map: ${id}`;
+}

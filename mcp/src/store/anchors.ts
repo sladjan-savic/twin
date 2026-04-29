@@ -1,4 +1,5 @@
 import { db, writeWithFailover } from "./db.js";
+import { indexItem } from "./search.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,5 +63,9 @@ export function saveAnchor(anchor: AnchorRecord): string {
     `anchor_${anchor_id}`,
     anchor
   );
+  try {
+    indexItem(anchor_id, "anchor", tag, resume.slice(0, 200), tag);
+  } catch { /* FTS is a cache — divergence recoverable via context_reindex */ }
+
   return failover ? `Saved anchor (failover): ${anchor_id}` : `Saved anchor: ${anchor_id}`;
 }

@@ -4,9 +4,10 @@
 
 1. **Resolve intent** — if stated (anchor tag, ticket link, task description): proceed. If absent: ask "What are we working on?"
 
-2. **Load anchor** — match intent against `anchors/anchors.md`. Primary store: `anchors/future.json`.
-   - Match by: `identity.tag`, `anchor_id`, or correlation with stated intent.
-   - If two plausible matches: ask which one.
+2. **Load anchor** — call `context_search(intent)` to get ranked L0 results across all stores.
+   - Inspect results: pick the top anchor match; surface any co-relevant ADLs, policies, or orientation maps as context.
+   - Load full anchor content with `anchor_load` only after confirming the match.
+   - If two plausible anchor matches: ask which one.
    - If no match: offer to create one.
 
 3. **Reconcile** — compare `resume` against opening message.
@@ -20,6 +21,7 @@
 ## Load rules
 
 - Anchor format: flat schema — `identity`, `state`, `resume`, `next`. Skip `delta`.
+- Co-relevant results from `context_search` (ADLs, policies, orientation maps): load L0 only; do not hydrate full content unless confirmed needed during the session.
 - Reference sections on demand only.
 
 ## Signals accepted

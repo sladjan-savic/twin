@@ -2,9 +2,40 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { loadAnchor, saveAnchor } from "./store/anchors.js";
-import { loadOrientation, findOrientations, saveOrientation, loadAdl, saveAdl, loadTestPlan, saveTestPlan, findPolicies, loadPolicy, savePolicy } from "./store/knowledge.js";
+import { loadOrientation, findOrientations, saveOrientation } from "./store/orientations.js";
+import { findPolicies, loadPolicy, savePolicy } from "./store/policies.js";
+import { loadAdl, saveAdl } from "./store/adls.js";
+import { loadTestPlan, saveTestPlan } from "./store/test-plans.js";
+import { contextSearch, reindexAll } from "./store/search.js";
 
 const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+server.registerTool(
+  "context_search",
+  {
+    description: "Search across all knowledge stores (anchors, ADLs, orientations, policies, test plans). Returns ranked L0 results — title and abstract only, no full content. Use at session init and before targeted _load calls.",
+    inputSchema: {
+      query: z.string().describe("Natural language query or keywords"),
+      limit: z.number().optional().default(5).describe("Max results (default 5)"),
+    },
+  },
+  async ({ query, limit }) => ({
+    content: [{ type: "text", text: contextSearch(query, limit ?? 5) }],
+  })
+);
+
+server.registerTool(
+  "context_reindex",
+  {
+    description: "Rebuild the FTS search index from source tables. Use if context_search returns stale or missing results.",
+    inputSchema: {},
+  },
+  async () => ({
+    content: [{ type: "text", text: reindexAll() }],
+  })
+);
 
 // ─── Anchors ──────────────────────────────────────────────────────────────────
 
