@@ -77,8 +77,15 @@ function currentVersion(): number {
 
 function migrate(version: number, sql: string): void {
   if (currentVersion() < version) {
-    db.exec(sql);
-    db.prepare("INSERT INTO schema_version (version) VALUES (?)").run(version);
+    db.exec("BEGIN");
+    try {
+      db.exec(sql);
+      db.prepare("INSERT INTO schema_version (version) VALUES (?)").run(version);
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    }
   }
 }
 
