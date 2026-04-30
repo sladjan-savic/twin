@@ -64,6 +64,8 @@ server.registerTool(
         resume:      z.string(),
         next:        z.array(z.string()),
         delta:       z.string(),
+        parent_id:   z.string().optional().describe("anchor_id of the parent seam; null for root"),
+        depth:       z.number().optional().default(0).describe("Tree depth: 0 = root, increments per level"),
       }),
     },
   },

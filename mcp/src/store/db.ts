@@ -111,6 +111,10 @@ migrate(3, `
 // v4 — priority column for policies (lower = fires first; default 99 = catch-all)
 migrate(4, `ALTER TABLE policies ADD COLUMN priority INTEGER NOT NULL DEFAULT 99`);
 
+// v5 — parent_id + depth for recursive seam decomposition tree (ADL-13)
+migrate(5, `ALTER TABLE anchors ADD COLUMN parent_id TEXT`);
+migrate(6, `ALTER TABLE anchors ADD COLUMN depth INTEGER NOT NULL DEFAULT 0`);
+
 // ─── Failover write ───────────────────────────────────────────────────────────
 
 export function writeWithFailover(

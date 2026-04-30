@@ -12,6 +12,8 @@ export type AnchorRecord = {
   resume:      string;
   next:        string[];
   delta:       string;
+  parent_id?:  string;
+  depth?:      number;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -45,21 +47,24 @@ export function loadAnchor(intent: string): string {
       all.map((a) => `  - ${a.anchor_id} [${a.status}]`).join("\n");
   }
 
-  const { anchor_id, tag, anchor_type, status, state, resume, next } = row as any;
+  const { anchor_id, tag, anchor_type, status, state, resume, next, parent_id, depth } = row as any;
   return JSON.stringify(
-    { identity: { tag, anchor_id, anchor_type, status }, state, resume, next: JSON.parse(next) },
+    {
+      identity: { tag, anchor_id, anchor_type, status, parent_id: parent_id ?? null, depth: depth ?? 0 },
+      state, resume, next: JSON.parse(next)
+    },
     null, 2
   );
 }
 
 export function saveAnchor(anchor: AnchorRecord): string {
-  const { anchor_id, tag, anchor_type, status, state, resume, next, delta } = anchor;
+  const { anchor_id, tag, anchor_type, status, state, resume, next, delta, parent_id, depth } = anchor;
   const { failover } = writeWithFailover(
     () => db.prepare(`
       INSERT OR REPLACE INTO anchors
-        (anchor_id, tag, anchor_type, status, state, resume, next, delta, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    `).run(anchor_id, tag, anchor_type, status, state, resume, JSON.stringify(next), delta),
+        (anchor_id, tag, anchor_type, status, state, resume, next, delta, parent_id, depth, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).run(anchor_id, tag, anchor_type, status, state, resume, JSON.stringify(next), delta, parent_id ?? null, depth ?? 0),
     `anchor_${anchor_id}`,
     anchor
   );
