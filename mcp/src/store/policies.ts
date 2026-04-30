@@ -3,8 +3,8 @@ import { indexItem } from "./search.js";
 
 export function findPolicies(tags: string[]): string {
   const all = db.prepare(
-    "SELECT id, name, trigger_tags, status FROM policies ORDER BY name"
-  ).all() as { id: string; name: string; trigger_tags: string; status: string }[];
+    "SELECT id, name, trigger_tags, status, priority FROM policies ORDER BY name"
+  ).all() as { id: string; name: string; trigger_tags: string; status: string; priority: number }[];
 
   const lowerTags = tags.map((t) => t.toLowerCase());
 
@@ -14,10 +14,10 @@ export function findPolicies(tags: string[]): string {
       try { kws = (JSON.parse(row.trigger_tags) as string[]).map((k) => k.toLowerCase()); }
       catch { kws = []; }
       const score = kws.filter((k) => lowerTags.includes(k)).length;
-      return { id: row.id, name: row.name, status: row.status, score };
+      return { id: row.id, name: row.name, status: row.status, score, priority: row.priority ?? 99 };
     })
     .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score || a.priority - b.priority);
 
   if (scored.length === 0) {
     return (
@@ -52,14 +52,14 @@ export function loadPolicy(intent: string): string {
 }
 
 export function savePolicy(
-  id: string, name: string, trigger_tags: string[], strategy: string, status: string
+  id: string, name: string, trigger_tags: string[], strategy: string, status: string, priority = 99
 ): string {
-  const data = { id, name, trigger_tags, strategy, status };
+  const data = { id, name, trigger_tags, strategy, status, priority };
   const { failover } = writeWithFailover(
     () => db.prepare(`
-      INSERT OR REPLACE INTO policies (id, name, trigger_tags, strategy, status, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'))
-    `).run(id, name, JSON.stringify(trigger_tags), strategy, status),
+      INSERT OR REPLACE INTO policies (id, name, trigger_tags, strategy, status, priority, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).run(id, name, JSON.stringify(trigger_tags), strategy, status, priority),
     `policy_${id}`,
     data
   );

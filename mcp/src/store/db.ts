@@ -108,7 +108,8 @@ migrate(3, `
   )
 `);
 
-// v4+ — append here: migrate(4, "ALTER TABLE ...");
+// v4 — priority column for policies (lower = fires first; default 99 = catch-all)
+migrate(4, `ALTER TABLE policies ADD COLUMN priority INTEGER NOT NULL DEFAULT 99`);
 
 // ─── Failover write ───────────────────────────────────────────────────────────
 

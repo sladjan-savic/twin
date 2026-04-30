@@ -152,10 +152,11 @@ server.registerTool(
       trigger_tags: z.array(z.string()).describe("Keywords that trigger this policy"),
       strategy:     z.string().describe("Full strategy text the agent follows when this policy fires"),
       status:       z.string().describe("active | draft | retired"),
+      priority:     z.number().optional().default(99).describe("Fire order when scores tie: 1=first, 99=last (default)"),
     },
   },
-  async ({ id, name, trigger_tags, strategy, status }) => ({
-    content: [{ type: "text", text: savePolicy(id, name, trigger_tags, strategy, status) }],
+  async ({ id, name, trigger_tags, strategy, status, priority }) => ({
+    content: [{ type: "text", text: savePolicy(id, name, trigger_tags, strategy, status, priority ?? 99) }],
   })
 );
 
