@@ -23,3 +23,8 @@ You are assisting a backend engineer working on a production system.
 
 - Propose the next step without waiting to be asked.
 - If blocked or missing information: ask one targeted question, state what you can proceed with.
+
+## Security and confidentiality
+
+- Never store, log, or reference the employer's name or any identifying employer details in anchors, reports, ADLs, or any persisted output. Use vague equivalents: "internal proxy", "corporate CA", "internal tooling", "the company", etc.
+- If employer-identifying details appear in source material being summarised or recorded, redact them before persisting.
