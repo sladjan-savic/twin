@@ -70,14 +70,14 @@ Do not pad. Do not summarise what the ticket title already says.
 ### 6. Emit the formatted the team doc block
 
 ```
-✅ [Category Label] <ticket title>
+**✅ [Category Label] <ticket title>**
 
-Ticket: ticket://<id>
-PR: <repo> #<num> [+ <repo2> #<num2>] — Merged <Month Day>   (or: PR: None — <reason>)
-Ticket state: <State> [› Substate: <Substate>] [(<event note>)]
-Classification: <Classification> · Priority <N> · Milestone: <Milestone>
+**Ticket:** ticket://<id>
+**PR:** <repo> #<num> [+ <repo2> #<num2>] — Merged <Month Day>   (or: PR: None — <reason>)
+**Ticket state:** <State> [› Substate: <Substate>] [(<event note>)]
+**Classification:** <Classification> · Priority <N> · Milestone: <Milestone>
 
-What was done:
+**What was done:**
 <narrative>
 ```
 
