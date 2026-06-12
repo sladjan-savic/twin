@@ -1,20 +1,23 @@
+import { z } from "zod";
 import { db, writeWithFailover, writeBatchWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
-export type AnchorRecord = {
-  anchor_id:   string;
-  tag:         string;
-  anchor_type: string;
-  status:      string;
-  state:       string;
-  resume:      string;
-  next:        string[];
-  delta:       string;
-  parent_id?:  string;
-  depth?:      number;
-};
+export const AnchorSchema = z.object({
+  anchor_id:   z.string(),
+  tag:         z.string(),
+  anchor_type: z.string(),
+  status:      z.string(),
+  state:       z.string(),
+  resume:      z.string(),
+  next:        z.array(z.string()),
+  delta:       z.string(),
+  parent_id:   z.string().optional().describe("anchor_id of the parent seam; null for root"),
+  depth:       z.number().optional().default(0).describe("Tree depth: 0 = root, increments per level"),
+});
+
+export type AnchorRecord = z.infer<typeof AnchorSchema>;
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +60,8 @@ export function loadAnchor(intent: string): string {
   );
 }
 
-export function saveAnchor(anchor: AnchorRecord): string {
+export function saveAnchor(input: z.input<typeof AnchorSchema>): string {
+  const anchor = AnchorSchema.parse(input);
   const { anchor_id, tag, anchor_type, status, state, resume, next, delta, parent_id, depth } = anchor;
 
   const saveMain = () => db.prepare(`

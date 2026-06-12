@@ -1,5 +1,19 @@
+import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+export const PolicySchema = z.object({
+  id:           z.string().describe("Kebab-case slug e.g. 'no-progress-escalation'"),
+  name:         z.string(),
+  trigger_tags: z.array(z.string()).describe("Keywords that trigger this policy"),
+  strategy:     z.string().describe("Full strategy text the agent follows when this policy fires"),
+  status:       z.string().describe("active | draft | retired"),
+  priority:     z.number().optional().default(99).describe("Fire order when scores tie: 1=first, 99=last (default)"),
+});
+
+export type PolicyRecord = z.infer<typeof PolicySchema>;
 
 export function findPolicies(tags: string[]): string {
   const all = db.prepare(
@@ -51,9 +65,8 @@ export function loadPolicy(intent: string): string {
   return `# ${row.name} [${row.status}]\n\n${row.strategy}`;
 }
 
-export function savePolicy(
-  id: string, name: string, trigger_tags: string[], strategy: string, status: string, priority = 99
-): string {
+export function savePolicy(input: z.input<typeof PolicySchema>): string {
+  const { id, name, trigger_tags, strategy, status, priority } = PolicySchema.parse(input);
   const data = { id, name, trigger_tags, strategy, status, priority };
   const { failover } = writeWithFailover(
     () => db.prepare(`

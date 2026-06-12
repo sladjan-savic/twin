@@ -1,5 +1,17 @@
+import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+export const OrientationSchema = z.object({
+  id:       z.string().describe("Slug e.g. 'dataset-groupby'"),
+  domain:   z.string().describe("Human-readable domain name"),
+  keywords: z.array(z.string()).describe("Match keywords for retrieval"),
+  content:  z.string().describe("Full markdown content"),
+});
+
+export type OrientationRecord = z.infer<typeof OrientationSchema>;
 
 export function loadOrientation(intent: string): string {
   const q = `%${intent.toLowerCase()}%`;
@@ -51,9 +63,8 @@ export function findOrientations(tags: string[]): string {
     .join("\n");
 }
 
-export function saveOrientation(
-  id: string, domain: string, keywords: string[], content: string
-): string {
+export function saveOrientation(input: z.input<typeof OrientationSchema>): string {
+  const { id, domain, keywords, content } = OrientationSchema.parse(input);
   const { failover } = writeWithFailover(
     () => db.prepare(`
       INSERT OR REPLACE INTO orientation_maps (id, domain, keywords, content, updated_at)

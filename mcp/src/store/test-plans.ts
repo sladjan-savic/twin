@@ -1,5 +1,18 @@
+import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+export const TestPlanSchema = z.object({
+  id:        z.string().describe("Slug e.g. 'ticket-173690700-user-display-names'"),
+  content:   z.string().describe("Full markdown test plan"),
+  radar_id:  z.string().optional(),
+  anchor_id: z.string().optional(),
+  title:     z.string().optional(),
+});
+
+export type TestPlanRecord = z.infer<typeof TestPlanSchema>;
 
 export function loadTestPlan(intent: string): string {
   const intentLower = intent.toLowerCase();
@@ -33,10 +46,8 @@ export function loadTestPlan(intent: string): string {
   return row.content;
 }
 
-export function saveTestPlan(
-  id: string, content: string,
-  radar_id?: string, anchor_id?: string, title?: string
-): string {
+export function saveTestPlan(record: TestPlanRecord): string {
+  const { id, content, radar_id, anchor_id, title } = record;
   const data = { id, content, radar_id, anchor_id, title };
   const { failover } = writeWithFailover(
     () => db.prepare(`

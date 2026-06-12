@@ -10,7 +10,7 @@ import { DatabaseSync } from "node:sqlite";
 const STORAGE_DIR = process.env.TWIN_MEMORY_DIR
   ?? path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../storage");
 
-export const DB_PATH      = path.join(STORAGE_DIR, "twin.db");
+export const DB_PATH      = process.env.TWIN_DB_PATH ?? path.join(STORAGE_DIR, "twin.db");
 export const FAILOVER_DIR = path.join(STORAGE_DIR, "failover");
 
 fs.mkdirSync(FAILOVER_DIR, { recursive: true });

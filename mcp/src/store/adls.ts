@@ -1,5 +1,19 @@
+import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+export const AdlSchema = z.object({
+  adl_id:  z.string().describe("ADL ID e.g. 'ADL-11'"),
+  tag:     z.string().optional().default(""),
+  name:    z.string(),
+  type:    z.string(),
+  status:  z.string(),
+  content: z.string().describe("Full JSON or markdown content of the ADL"),
+});
+
+export type AdlRecord = z.infer<typeof AdlSchema>;
 
 export function loadAdl(intent: string): string {
   const q = `%${intent.toLowerCase()}%`;
@@ -21,9 +35,8 @@ export function loadAdl(intent: string): string {
   return row.content;
 }
 
-export function saveAdl(
-  adl_id: string, tag: string, name: string, type: string, status: string, content: string
-): string {
+export function saveAdl(input: z.input<typeof AdlSchema>): string {
+  const { adl_id, tag, name, type, status, content } = AdlSchema.parse(input);
   const data = { adl_id, tag, name, type, status, content };
   const { failover } = writeWithFailover(
     () => db.prepare(`

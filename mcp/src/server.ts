@@ -1,11 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { loadAnchor, saveAnchor } from "./store/anchors.js";
-import { loadOrientation, findOrientations, saveOrientation } from "./store/orientations.js";
-import { findPolicies, loadPolicy, savePolicy } from "./store/policies.js";
-import { loadAdl, saveAdl } from "./store/adls.js";
-import { loadTestPlan, saveTestPlan } from "./store/test-plans.js";
+import { loadAnchor, saveAnchor, AnchorSchema } from "./store/anchors.js";
+import { loadOrientation, findOrientations, saveOrientation, OrientationSchema } from "./store/orientations.js";
+import { findPolicies, loadPolicy, savePolicy, PolicySchema } from "./store/policies.js";
+import { loadAdl, saveAdl, AdlSchema } from "./store/adls.js";
+import { loadTestPlan, saveTestPlan, TestPlanSchema } from "./store/test-plans.js";
 import { contextSearch, reindexAll } from "./store/search.js";
 
 const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
@@ -55,18 +55,7 @@ server.registerTool(
   {
     description: "Create or update an anchor in SQLite.",
     inputSchema: {
-      anchor: z.object({
-        anchor_id:   z.string(),
-        tag:         z.string(),
-        anchor_type: z.string(),
-        status:      z.string(),
-        state:       z.string(),
-        resume:      z.string(),
-        next:        z.array(z.string()),
-        delta:       z.string(),
-        parent_id:   z.string().optional().describe("anchor_id of the parent seam; null for root"),
-        depth:       z.number().optional().default(0).describe("Tree depth: 0 = root, increments per level"),
-      }),
+      anchor: AnchorSchema,
     },
   },
   async ({ anchor }) => ({
@@ -104,15 +93,10 @@ server.registerTool(
   "orientation_save",
   {
     description: "Create or update an orientation map. Content must be valid markdown following the orientation template.",
-    inputSchema: {
-      id:       z.string().describe("Slug e.g. 'dataset-groupby'"),
-      domain:   z.string().describe("Human-readable domain name"),
-      keywords: z.array(z.string()).describe("Match keywords for retrieval"),
-      content:  z.string().describe("Full markdown content"),
-    },
+    inputSchema: OrientationSchema.shape,
   },
-  async ({ id, domain, keywords, content }) => ({
-    content: [{ type: "text", text: saveOrientation(id, domain, keywords, content) }],
+  async (record) => ({
+    content: [{ type: "text", text: saveOrientation(record) }],
   })
 );
 
@@ -148,17 +132,10 @@ server.registerTool(
   "policy_save",
   {
     description: "Create or update a policy.",
-    inputSchema: {
-      id:           z.string().describe("Kebab-case slug e.g. 'no-progress-escalation'"),
-      name:         z.string(),
-      trigger_tags: z.array(z.string()).describe("Keywords that trigger this policy"),
-      strategy:     z.string().describe("Full strategy text the agent follows when this policy fires"),
-      status:       z.string().describe("active | draft | retired"),
-      priority:     z.number().optional().default(99).describe("Fire order when scores tie: 1=first, 99=last (default)"),
-    },
+    inputSchema: PolicySchema.shape,
   },
-  async ({ id, name, trigger_tags, strategy, status, priority }) => ({
-    content: [{ type: "text", text: savePolicy(id, name, trigger_tags, strategy, status, priority ?? 99) }],
+  async (record) => ({
+    content: [{ type: "text", text: savePolicy(record) }],
   })
 );
 
@@ -179,17 +156,10 @@ server.registerTool(
   "adl_save",
   {
     description: "Create or update an ADL entry.",
-    inputSchema: {
-      adl_id:  z.string().describe("ADL ID e.g. 'ADL-11'"),
-      tag:     z.string().optional().default(""),
-      name:    z.string(),
-      type:    z.string(),
-      status:  z.string(),
-      content: z.string().describe("Full JSON or markdown content of the ADL"),
-    },
+    inputSchema: AdlSchema.shape,
   },
-  async ({ adl_id, tag, name, type, status, content }) => ({
-    content: [{ type: "text", text: saveAdl(adl_id, tag, name, type, status, content) }],
+  async (record) => ({
+    content: [{ type: "text", text: saveAdl(record) }],
   })
 );
 
@@ -210,16 +180,10 @@ server.registerTool(
   "test_plan_save",
   {
     description: "Save a test plan. Links to an anchor and optional ticket ID.",
-    inputSchema: {
-      id:        z.string().describe("Slug e.g. 'ticket-173690700-user-display-names'"),
-      content:   z.string().describe("Full markdown test plan"),
-      radar_id:  z.string().optional(),
-      anchor_id: z.string().optional(),
-      title:     z.string().optional(),
-    },
+    inputSchema: TestPlanSchema.shape,
   },
-  async ({ id, content, radar_id, anchor_id, title }) => ({
-    content: [{ type: "text", text: saveTestPlan(id, content, radar_id, anchor_id, title) }],
+  async (record) => ({
+    content: [{ type: "text", text: saveTestPlan(record) }],
   })
 );
 
