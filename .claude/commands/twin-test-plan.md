@@ -1,3 +1,7 @@
+---
+description: Generate a test plan for the current change
+---
+
 Follow /Users/sladjan/git/twin/6_test_plan.md exactly. Use the current ticket context.
 
 On completing this stage:

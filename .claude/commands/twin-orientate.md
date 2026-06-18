@@ -1,3 +1,7 @@
+---
+description: Update the orientation map for the current subdomain
+---
+
 Assess whether the current session's work warrants an orientation map update. Follow these steps exactly:
 
 ## Step 1 — Pre-flight

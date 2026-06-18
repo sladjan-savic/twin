@@ -34,5 +34,12 @@ fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('✓ twin-anchor registered in ~/.claude.json');
 EOF
 
+echo "→ Linking twin slash commands into ~/.claude/commands/..."
+mkdir -p "$HOME/.claude/commands"
+for src in "$REPO_DIR"/.claude/commands/twin-*.md; do
+  ln -sf "$src" "$HOME/.claude/commands/$(basename "$src")"
+done
+echo "✓ Slash commands linked (single source of truth: $REPO_DIR/.claude/commands/)"
+
 echo ""
 echo "✓ Setup complete. Start a new Claude Code session and run /twin-start."
