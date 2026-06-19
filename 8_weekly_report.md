@@ -13,6 +13,26 @@ Generate the full weekly work summary: Slack-format text, write to `weekly.txt`,
 
 ## Steps
 
+### 0. Anchor freshness pre-check
+
+Find anchors that may have gone stale since they were last saved.
+
+**Skip this step entirely if the user passes `--skip-anchor-check`.**
+
+1. Call `context_search` with query `"status:in_progress OR status:active"` to find candidate anchors. Filter to those updated more than 12 hours ago whose status is not `completed`, `closed`, or `blocked`.
+2. For each candidate, call `anchor_load` and identify the **verifiable claim** the anchor states. Focus on the two most common cases:
+   - *PR opened* — extract PR number or ticket ID, run `git log --all --oneline --grep="<id>"` to check if it merged or closed.
+   - *Ticket state* — call `getProblemByIds` and compare the stored state against current state/substate.
+3. For each anchor where the claim diverged, surface a one-line diff to the user:
+   ```
+   [STALE] anchor-<id>: "PR #142 opened" — PR merged 2026-06-17. Patch?
+   [STALE] anchor-<id>: ticket state was "Open/Active" — now "Verify/Fixed". Patch?
+   ```
+4. For each: wait for user to confirm (`y`) or skip (`n`). On confirm, call `anchor_save` with the updated field and status. On skip, leave unchanged.
+5. Once all candidates are confirmed or skipped, proceed. If no candidates were found, emit `[ANCHOR-CHECK] All anchors current.` and continue.
+
+**Note:** `blocked` anchors are intentionally paused by human decision — never probe or patch them automatically.
+
 ### 1. Determine the week
 
 Compute Monday and Friday dates for the target week. Format: `Month D–D, YYYY`.
