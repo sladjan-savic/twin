@@ -3,4 +3,4 @@ description: Critically review the design — adversarial check before implement
 model: claude-opus-4-7
 ---
 
-Follow /Users/sladjan/git/twin/5_critical_review.md exactly. Use prior stage output from design.
+Follow /Users/sladjan/git/twin/5_critical_review.md exactly. Dispatch the review itself to the `software-architect` subagent per the Dispatch section — pass it the full design draft, not the compressed handoff.

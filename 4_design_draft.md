@@ -21,6 +21,7 @@ Include (if applicable):
 
 On completing this stage:
 1. Emit `[STAGE_COMPLETE | stage=DESIGN | summary=<one sentence>]`
-2. Offer: "Ready to move to Critical Review. Anchor this stage first?"
-3. On confirm → produce compressed handoff: 3 sentences max — design decision, key trade-offs accepted, open questions for review. Paste as `[Prior stage output]` in `5_critical_review.md`. Drop all draft iterations and discarded options.
-4. On decline → proceed with full context.
+2. **Save the full draft to a file** — `/Users/sladjan/Downloads/personal_docs/design_drafts/ticket-<ID>-<slug>.md`, before offering to anchor. Never the target repo or the twin repo — same reason as `test_plans/`: these mirror project-sensitive ticket/design detail and must stay out of any git history. Critical Review dispatches to a subagent with no access to this session's context; it needs this file, not a summary. Skipping this step means the full draft is unrecoverable once compressed below, including across a session boundary (e.g. resuming via `anchor_load`).
+3. Offer: "Ready to move to Critical Review. Anchor this stage first?"
+4. On confirm → produce compressed handoff for *this session's* resume: 3 sentences max — design decision, key trade-offs accepted, open questions for review, plus the `design_drafts/` file path. Paste the 3-sentence summary as `[Prior stage output]` in `5_critical_review.md`. Drop all draft iterations and discarded options from your own working context — but never from the saved file.
+5. On decline → proceed with full context.
