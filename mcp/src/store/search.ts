@@ -22,19 +22,44 @@ export function indexItem(
 // Returns L0 results (no full content). Caller loads full item by item_id
 // using the appropriate _load tool once relevance is confirmed.
 
-export function contextSearch(query: string, limit = 5): string {
-  let rows: { item_id: string; item_type: string; title: string; abstract: string }[];
+type SearchRow = { item_id: string; item_type: string; title: string; abstract: string };
 
+// item_id is UNINDEXED in knowledge_fts (see db.ts) — MATCH never sees it, so an
+// id or ticket/ticket number that isn't echoed in the title/abstract/tags text
+// (e.g. anchor_id "ticket-178698943" with tag "#speed-limit-v2-dup-custom-feedback")
+// is invisible to free-text search. Look up item_id directly as well.
+export function contextSearch(query: string, limit = 5): string {
+  const digitsOnly = query.replace(/[^0-9]/g, "");
+  const radarNum = digitsOnly.length >= 7 ? digitsOnly : "";
+
+  const idRows = db.prepare(`
+    SELECT item_id, item_type, title, abstract
+    FROM knowledge_fts
+    WHERE item_id LIKE ? OR (? != '' AND item_id LIKE ?)
+    ORDER BY length(item_id) ASC
+    LIMIT ?
+  `).all(`%${query}%`, radarNum, `%${radarNum}%`, limit) as SearchRow[];
+
+  let ftsRows: SearchRow[] = [];
   try {
-    rows = db.prepare(`
+    ftsRows = db.prepare(`
       SELECT item_id, item_type, title, abstract
       FROM knowledge_fts
       WHERE knowledge_fts MATCH ?
       ORDER BY rank
       LIMIT ?
-    `).all(query, limit) as typeof rows;
+    `).all(query, limit) as SearchRow[];
   } catch {
-    return `Search error — query may contain FTS5 syntax characters. Try plain keywords.`;
+    // query may contain FTS5 syntax characters — id matches above still stand
+  }
+
+  const seen = new Set<string>();
+  const rows: SearchRow[] = [];
+  for (const r of [...idRows, ...ftsRows]) {
+    if (seen.has(r.item_id)) continue;
+    seen.add(r.item_id);
+    rows.push(r);
+    if (rows.length >= limit) break;
   }
 
   if (rows.length === 0) return `No results for: "${query}"`;

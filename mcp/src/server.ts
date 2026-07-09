@@ -15,7 +15,7 @@ const server = new McpServer({ name: "twin-anchor", version: "2.0.0" });
 server.registerTool(
   "context_search",
   {
-    description: "Search across all knowledge stores (anchors, ADLs, orientations, policies, test plans). Returns ranked L0 results — title and abstract only, no full content. Use at session init and before targeted _load calls.",
+    description: "Search across all knowledge stores (anchors, ADLs, orientations, policies, test plans) by free text or by id/ticket/ticket number. Returns ranked L0 results — title and abstract only, no full content. Use at session init and before targeted _load calls.",
     inputSchema: {
       query: z.string().describe("Natural language query or keywords"),
       limit: z.number().optional().default(5).describe("Max results (default 5)"),
