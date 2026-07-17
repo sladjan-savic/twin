@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+import { formatZodError } from "./errors.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,13 @@ export function findOrientations(tags: string[]): string {
 }
 
 export function saveOrientation(input: z.input<typeof OrientationSchema>): string {
-  const { id, domain, keywords, content } = OrientationSchema.parse(input);
+  let parsed: OrientationRecord;
+  try {
+    parsed = OrientationSchema.parse(input);
+  } catch (e) {
+    throw e instanceof z.ZodError ? new Error(formatZodError(e)) : e;
+  }
+  const { id, domain, keywords, content } = parsed;
   const { failover } = writeWithFailover(
     () => db.prepare(`
       INSERT OR REPLACE INTO orientation_maps (id, domain, keywords, content, updated_at)

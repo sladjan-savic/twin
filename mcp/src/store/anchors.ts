@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, writeWithFailover, writeBatchWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+import { formatZodError } from "./errors.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,12 @@ export function loadAnchor(intent: string): string {
 }
 
 export function saveAnchor(input: z.input<typeof AnchorSchema>): string {
-  const anchor = AnchorSchema.parse(input);
+  let anchor: AnchorRecord;
+  try {
+    anchor = AnchorSchema.parse(input);
+  } catch (e) {
+    throw e instanceof z.ZodError ? new Error(formatZodError(e)) : e;
+  }
   const { anchor_id, tag, anchor_type, status, state, resume, next, delta, parent_id, depth } = anchor;
 
   const saveMain = () => db.prepare(`

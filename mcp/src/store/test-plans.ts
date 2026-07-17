@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+import { formatZodError } from "./errors.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -46,8 +47,14 @@ export function loadTestPlan(intent: string): string {
   return row.content;
 }
 
-export function saveTestPlan(record: TestPlanRecord): string {
-  const { id, content, radar_id, anchor_id, title } = record;
+export function saveTestPlan(input: z.input<typeof TestPlanSchema>): string {
+  let parsed: TestPlanRecord;
+  try {
+    parsed = TestPlanSchema.parse(input);
+  } catch (e) {
+    throw e instanceof z.ZodError ? new Error(formatZodError(e)) : e;
+  }
+  const { id, content, radar_id, anchor_id, title } = parsed;
   const data = { id, content, radar_id, anchor_id, title };
   const { failover } = writeWithFailover(
     () => db.prepare(`

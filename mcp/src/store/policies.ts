@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+import { formatZodError } from "./errors.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,13 @@ export function loadPolicy(intent: string): string {
 }
 
 export function savePolicy(input: z.input<typeof PolicySchema>): string {
-  const { id, name, trigger_tags, strategy, status, priority } = PolicySchema.parse(input);
+  let parsed: PolicyRecord;
+  try {
+    parsed = PolicySchema.parse(input);
+  } catch (e) {
+    throw e instanceof z.ZodError ? new Error(formatZodError(e)) : e;
+  }
+  const { id, name, trigger_tags, strategy, status, priority } = parsed;
   const data = { id, name, trigger_tags, strategy, status, priority };
   const { failover } = writeWithFailover(
     () => db.prepare(`

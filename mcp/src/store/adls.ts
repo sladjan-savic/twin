@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db, writeWithFailover } from "./db.js";
 import { indexItem } from "./search.js";
+import { formatZodError } from "./errors.js";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,13 @@ export function loadAdl(intent: string): string {
 }
 
 export function saveAdl(input: z.input<typeof AdlSchema>): string {
-  const { adl_id, tag, name, type, status, content } = AdlSchema.parse(input);
+  let parsed: AdlRecord;
+  try {
+    parsed = AdlSchema.parse(input);
+  } catch (e) {
+    throw e instanceof z.ZodError ? new Error(formatZodError(e)) : e;
+  }
+  const { adl_id, tag, name, type, status, content } = parsed;
   const data = { adl_id, tag, name, type, status, content };
   const { failover } = writeWithFailover(
     () => db.prepare(`
