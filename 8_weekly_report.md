@@ -72,10 +72,10 @@ For each ticket, produce a compact entry in this format (Slack / `weekly.txt` st
   Ticket: #<id> — <title>
   Status: <Merged (repo PR #NNN, Month Day) | In Progress — <detail> | Design — <detail>>
   Details:
-    <2–4 sentences: what was done, what changed, any key file/line references>
+    <1 sentence, occasionally 2 if the ticket spans genuinely distinct pieces of work>
 ```
 
-Keep entries factual and dense — no padding. Reference file paths only when they anchor something non-obvious.
+Details is a one-line summary of the outcome, not an implementation log. State what changed or what the root cause was — skip file/line references, method names, and step-by-step narration; that level of detail lives in the PR/commit, not the weekly report. Match the tone of a colleague's entry like "Added a fix to automatically expand the feedback section when a feature is added" — one clause, no sub-bullets, no multi-clause blow-by-blow.
 
 Group entries under week header. Separate consecutive weeks with a divider line:
 ```

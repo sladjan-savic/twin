@@ -58,30 +58,27 @@ Map ticket title / component to the nearest section header used in the weekly th
 
 Use judgment; new categories are fine if they fit better.
 
-### 5. Write "What was done"
+### 5. Write "Problem" and "Solution"
 
-3–6 sentences, engineering-focused:
-- What the bug or task was (root cause for bugs; goal for tasks)
-- What specifically was changed — include `File.scala:line` references where they anchor the explanation
-- How it was confirmed / verified (the-signal-source, tests, the observability tool, etc.) if mentioned in commits or ticket
+**Problem:** 1 sentence — the issue or goal (root cause for bugs; objective for tasks). Skip if the ticket title already says it clearly enough that repeating it would be pure padding.
 
-Do not pad. Do not summarise what the ticket title already says.
+**Solution:** 1–2 sentences — what changed and the outcome. Omit file/line references, method names, and step-by-step narration; that detail lives in the PR/commit. Mention how it was verified only if that's the single most important fact (e.g. hard-to-confirm regression), and note upstream unblocking radars only if the dependency itself is noteworthy.
+
+Do not pad.
 
 ### 6. Emit the formatted the team doc block
 
 ```
-**✅ [Category Label] <ticket title>**
+<Category Label> <ticket title>
 
-**Ticket:** ticket://<id>
-**PR:** <repo> #<num> [+ <repo2> #<num2>] — Merged <Month Day>   (or: PR: None — <reason>)
-**Ticket state:** <State> [› Substate: <Substate>] [(<event note>)]
-**Classification:** <Classification> · Priority <N> · Milestone: <Milestone>
+Ticket: ticket://<id> · PR: <repo> #<num> [+ <repo2> #<num2>] · Status: <emoji> <Merged/In Review/In Progress/etc> · State: <State>[/Substate]
 
-**What was done:**
-<narrative>
+Problem: <1 sentence>
+
+Solution: <1–2 sentences>
 ```
 
-Omit the PR line only if there truly are no commits. If multiple PRs, list all on one line separated by ` + `.
+Omit the PR field only if there truly are no commits. If multiple PRs, list all separated by ` + `.
 
 ---
 
