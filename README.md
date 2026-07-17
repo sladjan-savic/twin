@@ -122,7 +122,7 @@ Future    EDA — event-driven workflows, async HITL, UserTask resumption
 
 ## Design principles
 
-- **Agent-agnostic by design.** The KB store is the product. The agent is the runtime.
+- **Agent-agnostic by design.** The KB store is the product. The agent is the runtime. *Caveat: not yet true for every mechanism — ADL-13's seam-decomposition subagent spawn currently requires Claude Code's Agent tool specifically and is not independently usable with other orchestrators yet. The KB store itself (SQLite + MCP) has no such dependency.*
 - **Human is always in the loop.** HITL is permanent — the system surfaces problems, humans decide.
 - **MCP server is a store, not a controller.** KB accessor and design artifact registry only.
 - **Policies are data, not enforcement.** Recovery strategies live in SQLite, invoked by the human on demand.
