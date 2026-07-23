@@ -4,7 +4,7 @@ MODE: Design
 
 ## Prior stage output
 
-[Selected approach from EXPLORE phase]
+[Selected approach from EXPLORE phase — or, on a review loop-back per `5_critical_review.md`'s Lifecycle, the prior draft plus the blocking finding(s) that must be addressed in this revision]
 
 ## Request
 
@@ -16,6 +16,8 @@ Include (if applicable):
 - algorithm outline
 - pseudocode or code
 - migration or compatibility considerations
+
+On a review loop-back (prior stage output includes blocking findings from a prior review round), state explicitly how each blocking finding was addressed in this revision — don't silently fold the fix in without naming it, since the next review round needs to verify the specific gap was actually closed, not just that the draft changed somehow.
 
 ## Lifecycle
 
