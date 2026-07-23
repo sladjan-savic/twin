@@ -122,6 +122,9 @@ migrate(4, `ALTER TABLE policies ADD COLUMN priority INTEGER NOT NULL DEFAULT 99
 migrate(5, `ALTER TABLE anchors ADD COLUMN parent_id TEXT`);
 migrate(6, `ALTER TABLE anchors ADD COLUMN depth INTEGER NOT NULL DEFAULT 0`);
 
+// v7 — provenance (claim -> file:line) for orientation maps (ADL-30)
+migrate(7, `ALTER TABLE orientation_maps ADD COLUMN sources TEXT NOT NULL DEFAULT '[]'`);
+
 // ─── Failover write ───────────────────────────────────────────────────────────
 
 export function writeWithFailover(

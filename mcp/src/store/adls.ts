@@ -36,6 +36,19 @@ export function loadAdl(intent: string): string {
   return row.content;
 }
 
+export function listAdls(): { adl_id: string; name: string; status: string }[] {
+  return db.prepare(
+    "SELECT adl_id, name, status FROM adls ORDER BY adl_id"
+  ).all() as { adl_id: string; name: string; status: string }[];
+}
+
+export function getAdlById(adl_id: string): string | undefined {
+  const row = db.prepare(
+    "SELECT content FROM adls WHERE adl_id = ?"
+  ).get(adl_id) as { content: string } | undefined;
+  return row?.content;
+}
+
 export function saveAdl(input: z.input<typeof AdlSchema>): string {
   let parsed: AdlRecord;
   try {

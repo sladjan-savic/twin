@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { saveAdl, loadAdl } from "../adls.js";
+import { saveAdl, loadAdl, listAdls, getAdlById } from "../adls.js";
 import { saveTestPlan, loadTestPlan } from "../test-plans.js";
-import { saveOrientation, loadOrientation, findOrientations } from "../orientations.js";
+import { saveOrientation, loadOrientation, findOrientations, listOrientations, getOrientationById } from "../orientations.js";
 import { savePolicy, loadPolicy } from "../policies.js";
 import { db } from "../db.js";
 
@@ -33,6 +33,21 @@ describe("ADL round-trip", () => {
   it("lists available ADLs in not-found message", () => {
     saveAdl({ adl_id: "ADL-14", name: "Test", type: "tooling", status: "accepted", content: "#" });
     expect(loadAdl("ADL-99")).toContain("ADL-14");
+  });
+
+  it("listAdls returns id/name/status for every saved ADL", () => {
+    saveAdl({ adl_id: "ADL-14", name: "Test ADL", type: "tooling", status: "accepted", content: "#" });
+    saveAdl({ adl_id: "ADL-15", name: "Other ADL", type: "tooling", status: "proposed", content: "#" });
+    expect(listAdls()).toEqual([
+      { adl_id: "ADL-14", name: "Test ADL", status: "accepted" },
+      { adl_id: "ADL-15", name: "Other ADL", status: "proposed" },
+    ]);
+  });
+
+  it("getAdlById fetches exact content, undefined when missing", () => {
+    saveAdl({ adl_id: "ADL-14", name: "Test ADL", type: "tooling", status: "accepted", content: "raw content" });
+    expect(getAdlById("ADL-14")).toBe("raw content");
+    expect(getAdlById("ADL-99")).toBeUndefined();
   });
 });
 
@@ -76,6 +91,45 @@ describe("Orientation round-trip", () => {
 
   it("returns not-found for missing orientation", () => {
     expect(loadOrientation("nonexistent")).toContain("No orientation map found");
+  });
+
+  it("listOrientations returns id/domain for every saved map", () => {
+    saveOrientation({ id: "csv-domain", domain: "CSV", keywords: ["csv"], content: "#" });
+    saveOrientation({ id: "test-domain", domain: "Test Domain", keywords: ["test"], content: "#" });
+    expect(listOrientations()).toEqual([
+      { id: "csv-domain", domain: "CSV" },
+      { id: "test-domain", domain: "Test Domain" },
+    ]);
+  });
+
+  it("getOrientationById fetches exact content (no domain header), undefined when missing", () => {
+    saveOrientation({ id: "test-domain", domain: "Test Domain", keywords: ["test"], content: "raw body" });
+    expect(getOrientationById("test-domain")).toBe("raw body");
+    expect(getOrientationById("nonexistent")).toBeUndefined();
+  });
+
+  it("defaults sources to empty and renders no Sources section when absent", () => {
+    saveOrientation({ id: "test-domain", domain: "Test Domain", keywords: ["test"], content: "Body." });
+    expect(loadOrientation("test-domain")).not.toContain("## Sources");
+    expect(getOrientationById("test-domain")).not.toContain("## Sources");
+  });
+
+  it("persists sources and renders a Sources section on load and getById", () => {
+    saveOrientation({
+      id: "test-domain",
+      domain: "Test Domain",
+      keywords: ["test"],
+      content: "Body.",
+      sources: [
+        { claim: "Foo always does X", file: "server/app/services/FooService.scala", line: 42 },
+        { claim: "Bar has no line-level anchor", file: "server/app/services/BarService.scala" },
+      ],
+    });
+    const loaded = loadOrientation("test-domain");
+    expect(loaded).toContain("## Sources");
+    expect(loaded).toContain("Foo always does X — `server/app/services/FooService.scala:42`");
+    expect(loaded).toContain("Bar has no line-level anchor — `server/app/services/BarService.scala`");
+    expect(getOrientationById("test-domain")).toContain("## Sources");
   });
 });
 

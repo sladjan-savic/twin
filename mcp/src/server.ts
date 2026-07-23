@@ -1,10 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { loadAnchor, saveAnchor, AnchorSchema } from "./store/anchors.js";
-import { loadOrientation, findOrientations, saveOrientation, OrientationSchema } from "./store/orientations.js";
+import { loadOrientation, findOrientations, saveOrientation, OrientationSchema, listOrientations, getOrientationById } from "./store/orientations.js";
 import { findPolicies, loadPolicy, savePolicy, PolicySchema } from "./store/policies.js";
-import { loadAdl, saveAdl, AdlSchema } from "./store/adls.js";
+import { loadAdl, saveAdl, AdlSchema, listAdls, getAdlById } from "./store/adls.js";
 import { loadTestPlan, saveTestPlan, TestPlanSchema } from "./store/test-plans.js";
 import { contextSearch, reindexAll } from "./store/search.js";
 
@@ -100,6 +100,30 @@ server.registerTool(
   })
 );
 
+server.registerResource(
+  "orientation-maps",
+  new ResourceTemplate("twin://orientation/{id}", {
+    list: async () => ({
+      resources: listOrientations().map(({ id, domain }) => ({
+        uri: `twin://orientation/${id}`,
+        name: domain,
+        description: `Orientation map: ${domain} (id: ${id})`,
+        mimeType: "text/markdown",
+      })),
+    }),
+  }),
+  {
+    description: "Browsable catalog of all orientation maps. Complements orientation_find/orientation_load — use this to see what domains are mapped without a context_search round-trip.",
+  },
+  async (uri, { id }) => {
+    const content = getOrientationById(String(id));
+    if (content === undefined) {
+      throw new Error(`No orientation map found for id: ${id}`);
+    }
+    return { contents: [{ uri: uri.href, mimeType: "text/markdown", text: content }] };
+  }
+);
+
 // ─── Policies ─────────────────────────────────────────────────────────────────
 
 server.registerTool(
@@ -161,6 +185,30 @@ server.registerTool(
   async (record) => ({
     content: [{ type: "text", text: saveAdl(record) }],
   })
+);
+
+server.registerResource(
+  "adls",
+  new ResourceTemplate("twin://adl/{id}", {
+    list: async () => ({
+      resources: listAdls().map(({ adl_id, name, status }) => ({
+        uri: `twin://adl/${adl_id}`,
+        name: `${adl_id}: ${name}`,
+        description: `[${status}]`,
+        mimeType: "application/json",
+      })),
+    }),
+  }),
+  {
+    description: "Browsable catalog of all architectural design log entries. Complements adl_load — use this to see what decisions exist without a context_search round-trip.",
+  },
+  async (uri, { id }) => {
+    const content = getAdlById(String(id));
+    if (content === undefined) {
+      throw new Error(`No ADL found for id: ${id}`);
+    }
+    return { contents: [{ uri: uri.href, mimeType: "application/json", text: content }] };
+  }
 );
 
 // ─── Test plans ───────────────────────────────────────────────────────────────
