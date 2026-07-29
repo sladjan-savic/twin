@@ -24,7 +24,9 @@ export type OrientationRecord = z.infer<typeof OrientationSchema>;
 export type SourceRecord = z.infer<typeof SourceSchema>;
 
 function renderSources(sources: SourceRecord[]): string {
-  if (sources.length === 0) return "";
+  if (sources.length === 0) {
+    return "\n\n_(No recorded sources — this map predates ADL-30's provenance field, or its claims have no single traceable source. Absence here doesn't mean unverified.)_";
+  }
   const lines = sources.map((s) => `- ${s.claim} — \`${s.file}${s.line ? `:${s.line}` : ""}\``);
   return `\n\n## Sources\n\n${lines.join("\n")}`;
 }

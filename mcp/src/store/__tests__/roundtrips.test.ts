@@ -104,14 +104,18 @@ describe("Orientation round-trip", () => {
 
   it("getOrientationById fetches exact content (no domain header), undefined when missing", () => {
     saveOrientation({ id: "test-domain", domain: "Test Domain", keywords: ["test"], content: "raw body" });
-    expect(getOrientationById("test-domain")).toBe("raw body");
+    const result = getOrientationById("test-domain");
+    expect(result).toContain("raw body");
+    expect(result).not.toContain("# Test Domain");
     expect(getOrientationById("nonexistent")).toBeUndefined();
   });
 
-  it("defaults sources to empty and renders no Sources section when absent", () => {
+  it("defaults sources to empty and renders a no-sources caveat instead of a Sources section", () => {
     saveOrientation({ id: "test-domain", domain: "Test Domain", keywords: ["test"], content: "Body." });
     expect(loadOrientation("test-domain")).not.toContain("## Sources");
+    expect(loadOrientation("test-domain")).toContain("No recorded sources");
     expect(getOrientationById("test-domain")).not.toContain("## Sources");
+    expect(getOrientationById("test-domain")).toContain("No recorded sources");
   });
 
   it("persists sources and renders a Sources section on load and getById", () => {
