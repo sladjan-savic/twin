@@ -1,4 +1,5 @@
 .DS_Store
+CLAUDE.local.md
 storage/twin.db
 storage/failover/
 anchors/
