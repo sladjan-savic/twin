@@ -114,7 +114,7 @@ describe("OrientationSchema", () => {
 describe("TestPlanSchema", () => {
   it("parses with only required fields", () => {
     const result = TestPlanSchema.parse({ id: "plan-1", content: "# Plan\n\nSteps." });
-    expect(result.radar_id).toBeUndefined();
+    expect(result.issue_id).toBeUndefined();
     expect(result.anchor_id).toBeUndefined();
     expect(result.title).toBeUndefined();
   });
@@ -123,11 +123,11 @@ describe("TestPlanSchema", () => {
     const result = TestPlanSchema.parse({
       id: "plan-1",
       content: "# Plan",
-      radar_id: "ticket-123",
+      issue_id: "ticket-123",
       anchor_id: "anchor-abc",
       title: "My Plan",
     });
-    expect(result.radar_id).toBe("ticket-123");
+    expect(result.issue_id).toBe("ticket-123");
     expect(result.title).toBe("My Plan");
   });
 });

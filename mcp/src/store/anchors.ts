@@ -6,16 +6,16 @@ import { formatZodError } from "./errors.js";
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 export const AnchorSchema = z.object({
-  anchor_id:   z.string(),
-  tag:         z.string(),
+  anchor_id: z.string(),
+  tag: z.string(),
   anchor_type: z.string(),
-  status:      z.string(),
-  state:       z.string(),
-  resume:      z.string(),
-  next:        z.array(z.string()),
-  delta:       z.string(),
-  parent_id:   z.string().optional().describe("anchor_id of the parent seam; null for root"),
-  depth:       z.number().optional().default(0).describe("Tree depth: 0 = root, increments per level"),
+  status: z.string(),
+  state: z.string(),
+  resume: z.string(),
+  next: z.array(z.string()),
+  delta: z.string(),
+  parent_id: z.string().optional().describe("anchor_id of the parent seam; null for root"),
+  depth: z.number().optional().default(0).describe("Tree depth: 0 = root, increments per level"),
 });
 
 export type AnchorRecord = z.infer<typeof AnchorSchema>;
@@ -26,7 +26,7 @@ export function loadAnchor(intent: string): string {
   const intentLower = intent.toLowerCase();
   const q = `%${intentLower}%`;
   const numOnly = intent.replace(/[^0-9]/g, "");
-  const radarNum = numOnly.length >= 7 ? numOnly : "";
+  const issueNum = numOnly.length >= 7 ? numOnly : "";
 
   const row = db.prepare(`
     SELECT * FROM anchors
@@ -41,7 +41,7 @@ export function loadAnchor(intent: string): string {
         ELSE 5
       END
     LIMIT 1
-  `).get(q, q, radarNum, `%${radarNum}%`, intentLower, intentLower, q, q) as Record<string, unknown> | undefined;
+  `).get(q, q, issueNum, `%${issueNum}%`, intentLower, intentLower, q, q) as Record<string, unknown> | undefined;
 
   if (!row) {
     const all = db.prepare(

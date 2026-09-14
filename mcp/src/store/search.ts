@@ -30,7 +30,7 @@ type SearchRow = { item_id: string; item_type: string; title: string; abstract: 
 // is invisible to free-text search. Look up item_id directly as well.
 export function contextSearch(query: string, limit = 5): string {
   const digitsOnly = query.replace(/[^0-9]/g, "");
-  const radarNum = digitsOnly.length >= 7 ? digitsOnly : "";
+  const issueNum = digitsOnly.length >= 7 ? digitsOnly : "";
 
   const idRows = db.prepare(`
     SELECT item_id, item_type, title, abstract
@@ -38,7 +38,7 @@ export function contextSearch(query: string, limit = 5): string {
     WHERE item_id LIKE ? OR (? != '' AND item_id LIKE ?)
     ORDER BY length(item_id) ASC
     LIMIT ?
-  `).all(`%${query}%`, radarNum, `%${radarNum}%`, limit) as SearchRow[];
+  `).all(`%${query}%`, issueNum, `%${issueNum}%`, limit) as SearchRow[];
 
   let ftsRows: SearchRow[] = [];
   try {
@@ -109,11 +109,11 @@ export function reindexAll(): string {
   }
 
   const plans = db.prepare(
-    "SELECT id, radar_id, anchor_id, title, content FROM test_plans"
-  ).all() as { id: string; radar_id: string; anchor_id: string; title: string; content: string }[];
+    "SELECT id, issue_id, anchor_id, title, content FROM test_plans"
+  ).all() as { id: string; issue_id: string; anchor_id: string; title: string; content: string }[];
   for (const r of plans) {
     const heading = r.title ?? r.id;
-    const tags = [r.radar_id, r.anchor_id].filter(Boolean).join(" ");
+    const tags = [r.issue_id, r.anchor_id].filter(Boolean).join(" ");
     indexItem(r.id, "test_plan", heading, r.content.slice(0, 200), tags);
   }
 

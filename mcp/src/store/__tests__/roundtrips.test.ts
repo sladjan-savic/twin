@@ -55,12 +55,12 @@ describe("ADL round-trip", () => {
 
 describe("Test plan round-trip", () => {
   it("saves and loads content intact", () => {
-    saveTestPlan({ id: "ticket-123-plan", content: "# Plan\n\n- Step 1", radar_id: "ticket-123", title: "My Plan" });
+    saveTestPlan({ id: "ticket-123-plan", content: "# Plan\n\n- Step 1", issue_id: "ticket-123", title: "My Plan" });
     expect(loadTestPlan("ticket-123-plan")).toContain("Step 1");
   });
 
   it("finds by numeric ticket ID (7+ digits)", () => {
-    saveTestPlan({ id: "ticket-1234567-plan", content: "# Plan content", radar_id: "ticket-1234567" });
+    saveTestPlan({ id: "ticket-1234567-plan", content: "# Plan content", issue_id: "ticket-1234567" });
     expect(loadTestPlan("1234567")).toContain("Plan content");
   });
 
