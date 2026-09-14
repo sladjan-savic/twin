@@ -1,13 +1,13 @@
-# Weekly Entry — Single Ticket (the team doc format)
+# Weekly Entry — Single Ticket (team-doc format)
 
-Generate a formatted the team doc entry for one ticket ticket, ready to paste into the week's section.
+Generate a formatted team-doc entry for one ticket, ready to paste into the week's section.
 
 ---
 
 ## Input
 
 The ticket ID comes from one of:
-- The argument passed to the skill (e.g. `/weekly-entry ticket://178124143`)
+- The argument passed to the skill (e.g. `/weekly-entry <ticket-url-or-id>`)
 - The current session's anchor/context (ask if ambiguous)
 
 ---
@@ -16,7 +16,7 @@ The ticket ID comes from one of:
 
 ### 1. Fetch ticket details
 
-Call `getProblemByIds` with the ticket ID. Extract:
+Call the ticket tracker's fetch-by-ID tool with the ticket ID. Extract:
 - Title
 - State and substate
 - Classification (Bug / Task / Feature / etc.)
@@ -27,15 +27,11 @@ Call `getProblemByIds` with the ticket ID. Extract:
 
 ### 2. Find related PRs
 
-Search git log across all working directories for commits referencing the ticket ID. Use:
+Search git log across all working directories for commits referencing the ticket, by whatever URL or ID format appears in commit messages in this environment. Use:
 ```
-git log --all --oneline --grep="ticket://<id>"
+git log --all --oneline --grep="<ticket-url-or-id>"
 ```
-Run this in each repo that may be relevant:
-- `/Users/sladjan/git/backend-service-a`
-- `/Users/sladjan/git/review-service`
-- `/Users/sladjan/git/service-interfaces`
-- `/Users/sladjan/git/data-schema`
+Run this in each repo listed in `~/.claude/twin-repos.txt` (personal, gitignored — one absolute repo path per line):
 
 Extract PR numbers from commit messages (pattern: `#NNNN`). Note merge dates.
 
@@ -50,11 +46,11 @@ Extract PR numbers from commit messages (pattern: `#NNNN`). Note merge dates.
 
 ### 4. Determine category
 
-Map ticket title / component to the nearest section header used in the weekly the team doc. Common ones:
-- `🗂️ widget reviews`
-- `📱 App Reviews`
+Map ticket title / component to the nearest section header used in the weekly doc. Common ones:
+- `🗂️ Data pipeline`
+- `📱 Client apps`
 - `🤖 Automation`
-- `🗺️ Maps / Geospatial`
+- `🌐 Platform / Infra`
 
 Use judgment; new categories are fine if they fit better.
 
@@ -62,16 +58,16 @@ Use judgment; new categories are fine if they fit better.
 
 **Problem:** 1 sentence — the issue or goal (root cause for bugs; objective for tasks). Skip if the ticket title already says it clearly enough that repeating it would be pure padding.
 
-**Solution:** 1–2 sentences — what changed and the outcome. Omit file/line references, method names, and step-by-step narration; that detail lives in the PR/commit. Mention how it was verified only if that's the single most important fact (e.g. hard-to-confirm regression), and note upstream unblocking radars only if the dependency itself is noteworthy.
+**Solution:** 1–2 sentences — what changed and the outcome. Omit file/line references, method names, and step-by-step narration; that detail lives in the PR/commit. Mention how it was verified only if that's the single most important fact (e.g. hard-to-confirm regression), and note upstream unblocking tickets only if the dependency itself is noteworthy.
 
 Do not pad.
 
-### 6. Emit the formatted the team doc block
+### 6. Emit the formatted team-doc block
 
 ```
 <Category Label> <ticket title>
 
-Ticket: ticket://<id> · PR: <repo> #<num> [+ <repo2> #<num2>] · Status: <emoji> <Merged/In Review/In Progress/etc> · State: <State>[/Substate]
+Ticket: <ticket-url-or-id> · PR: <repo> #<num> [+ <repo2> #<num2>] · Status: <emoji> <Merged/In Review/In Progress/etc> · State: <State>[/Substate]
 
 Problem: <1 sentence>
 

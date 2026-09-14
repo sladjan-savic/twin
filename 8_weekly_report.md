@@ -22,7 +22,7 @@ Find anchors that may have gone stale since they were last saved.
 1. Call `context_search` with query `"status:in_progress OR status:active"` to find candidate anchors. Filter to those updated more than 12 hours ago whose status is not `completed`, `closed`, or `blocked`.
 2. For each candidate, call `anchor_load` and identify the **verifiable claim** the anchor states. Focus on the two most common cases:
    - *PR opened* — extract PR number or ticket ID, run `git log --all --oneline --grep="<id>"` to check if it merged or closed.
-   - *Ticket state* — call `getProblemByIds` and compare the stored state against current state/substate.
+   - *Ticket state* — call the ticket tracker's fetch-by-ID tool and compare the stored state against current state/substate.
 3. For each anchor where the claim diverged, surface a one-line diff to the user:
    ```
    [STALE] anchor-<id>: "PR #142 opened" — PR merged 2026-06-17. Patch?
@@ -43,25 +43,21 @@ Search git log across all repos for commits in the date range:
 ```
 git log --after="YYYY-MM-DD" --before="YYYY-MM-DD" --oneline --all
 ```
-Run in each of:
-- `/Users/sladjan/git/backend-service-a`
-- `/Users/sladjan/git/review-service`
-- `/Users/sladjan/git/service-interfaces`
-- `/Users/sladjan/git/data-schema`
+Run in each repo listed in `~/.claude/twin-repos.txt` (personal, gitignored — one absolute repo path per line):
 
-Extract all `ticket://NNNNNNNN` references from commit messages. Deduplicate.
+Extract all ticket URL/ID references from commit messages (whatever format this environment's commit convention uses). Deduplicate.
 
-Also check `/Users/sladjan/Downloads/personal_docs/worklog/weekly.txt` — if the existing file covers the same week, use the ticket IDs already listed there as a cross-check (don't skip radars that appear there but not in git, e.g. design-only tickets).
+Also check `/Users/sladjan/Downloads/personal_docs/worklog/weekly.txt` — if the existing file covers the same week, use the ticket IDs already listed there as a cross-check (don't skip tickets that appear there but not in git, e.g. design-only tickets).
 
 ### 3. Fetch ticket details
 
-For each ticket ID, call `getProblemByIds`. Extract: title, state, substate, resolution, resolver, milestone, classification, priority.
+For each ticket ID, call the ticket tracker's fetch-by-ID tool. Extract: title, state, substate, resolution, resolver, milestone, classification, priority.
 
 ### 4. Find PRs per ticket
 
 For each ticket ID:
 ```
-git log --all --oneline --grep="ticket://<id>"
+git log --all --oneline --grep="<ticket-url-or-id>"
 ```
 across all repos. Note PR numbers and merge dates.
 
@@ -122,10 +118,10 @@ Read the file, parse JSON, prepend a new entry (most recent first), write back:
   "week_end": "2026-06-06",
   "entries": [
     {
-      "radar_id": "178124143",
+      "ticket_id": "178124143",
       "title": "...",
       "status": "merged",
-      "prs": [{"repo": "backend-service-a", "number": 1753, "merged": "2026-05-29"}],
+      "prs": [{"repo": "backend-service", "number": 1753, "merged": "2026-05-29"}],
       "details": "..."
     }
   ]

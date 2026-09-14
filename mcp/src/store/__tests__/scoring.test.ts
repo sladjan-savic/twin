@@ -66,8 +66,8 @@ describe("findOrientations", () => {
   });
 
   it("returns matching orientation by keyword overlap", () => {
-    saveOrientation({ id: "dataset-eval", domain: "Widget Review", keywords: ["csv", "upload"], content: "#" });
-    expect(findOrientations(["csv"])).toContain("dataset-eval");
+    saveOrientation({ id: "widget-review", domain: "Widget Review", keywords: ["csv", "upload"], content: "#" });
+    expect(findOrientations(["csv"])).toContain("widget-review");
   });
 
   it("ranks higher-overlap map first", () => {

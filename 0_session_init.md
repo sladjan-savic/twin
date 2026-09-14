@@ -9,7 +9,7 @@
    - Load full anchor content with `anchor_load` only after confirming the match.
    - If two plausible anchor matches: ask which one.
    - If no match: offer to create one.
-   - If intent references an external ticket/ticket: fetch and read its full body (steps to reproduce, expected/actual) before treating ANY context_search match — including an orientation-map pitfall that looks like a title match — as confirmed root cause or scope. A title match against internal docs is a lead, not a conclusion.
+   - If intent references an external ticket: fetch and read its full body (steps to reproduce, expected/actual) before treating ANY context_search match — including an orientation-map pitfall that looks like a title match — as confirmed root cause or scope. A title match against internal docs is a lead, not a conclusion.
 
 3. **Reconcile** — compare `resume` against opening message.
    - Aligned: summarise in one sentence, proceed.
@@ -30,6 +30,6 @@
 | Signal | Action |
 |---|---|
 | Anchor tag `#{...}` | Load exact match |
-| Ticket / ticket link | Match by correlation_id, then always fetch the full external ticket body regardless of match |
+| Ticket link | Match by correlation_id, then always fetch the full external ticket body regardless of match |
 | Anchor filename | Load directly |
 | Natural language | Infer from index, reconcile in step 3 |

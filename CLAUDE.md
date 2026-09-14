@@ -27,6 +27,6 @@ These are the methodology specs the `twin-*` skills follow — authored, not gen
 
 Architectural decisions live in SQLite (`adls` table), not as files — query via `mcp__twin-anchor__adl_load` or `context_search`, or directly: `sqlite3 storage/twin.db "SELECT adl_id, name, status FROM adls ORDER BY adl_id;"`. Check for an existing ADL before re-deciding something that looks already-settled; ADL-23/24's evaluation method (native Anthropic/MCP mechanism vs. bespoke) is the standing test to apply before adding new infra to `mcp/src`.
 
-## MAPs domain content lives outside this repo
+## Client/employer domain content lives outside this repo
 
-This file used to carry Widget Reviews / the backend service / the review service domain notes. That's a different project's knowledge, not twin's, so it now lives in `~/.claude/maps-context.md` (personal, not git-tracked) and loads via `CLAUDE.local.md` in this repo and in `backend-service-a` — not here.
+This file used to carry a specific client project's domain notes. That's a different project's knowledge, not twin's, so it now lives in a personal, gitignored file outside this repo, loaded via `CLAUDE.local.md` here and in that project's own repo — not here.

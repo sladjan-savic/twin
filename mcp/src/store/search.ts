@@ -25,8 +25,8 @@ export function indexItem(
 type SearchRow = { item_id: string; item_type: string; title: string; abstract: string };
 
 // item_id is UNINDEXED in knowledge_fts (see db.ts) — MATCH never sees it, so an
-// id or ticket/ticket number that isn't echoed in the title/abstract/tags text
-// (e.g. anchor_id "ticket-178698943" with tag "#speed-limit-v2-dup-custom-feedback")
+// id or ticket number that isn't echoed in the title/abstract/tags text
+// (e.g. anchor_id "ticket-178698943" with tag "#widget-v2-dup-custom-feedback")
 // is invisible to free-text search. Look up item_id directly as well.
 export function contextSearch(query: string, limit = 5): string {
   const digitsOnly = query.replace(/[^0-9]/g, "");

@@ -1,5 +1,5 @@
 ---
-description: Generate a the team doc-formatted weekly entry for one ticket
+description: Generate a team-doc-formatted weekly entry for one ticket
 argument-hint: [ticket-id]
 ---
 

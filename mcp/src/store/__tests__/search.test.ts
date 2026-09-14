@@ -10,11 +10,11 @@ function clearAll() {
 
 const ROOT = {
   anchor_id: "ticket-178698943",
-  tag: "#speed-limit-v2-dup-custom-feedback",
+  tag: "#widget-v2-dup-custom-feedback",
   anchor_type: "investigation",
   status: "active",
   state: "## Current\nWorking.",
-  resume: "Dedupe overlapping CUSTOM feedback scope claims",
+  resume: "Dedupe overlapping duplicate feedback scope claims",
   next: ["ship"] as string[],
   delta: "",
   depth: 0,

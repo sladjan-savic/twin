@@ -7,7 +7,7 @@ Follow /Users/sladjan/git/twin/6_test_plan.md exactly. Use the current ticket co
 On completing this stage:
 1. Call test_plan_save with:
    - id: "ticket-<ID>-<slug>" (e.g. "ticket-173690700-user-display-names")
-   - radar_id: the ticket:// link
+   - radar_id: the ticket's URL or ID as referenced in commit messages (the field is named `radar_id` in the store schema — pass whatever ticket reference format this environment actually uses)
    - anchor_id: current session anchor_id if known
    - title: short description of what the plan covers
    - content: the complete markdown test plan

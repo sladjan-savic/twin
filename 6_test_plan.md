@@ -4,7 +4,7 @@ MODE: Test planning
 
 ## Task context
 
-- Ticket / ticket from current session anchor
+- Ticket from current session anchor
 - Git diff or description of what changed
 - Target environment (staging, production, local)
 
