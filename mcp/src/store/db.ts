@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 // @ts-ignore — node:sqlite experimental in Node 24
 import { DatabaseSync } from "node:sqlite";
 
@@ -8,7 +9,7 @@ import { DatabaseSync } from "node:sqlite";
 // TWIN_MEMORY_DIR makes both paths relocatable (e.g. → Postgres-backed mount).
 
 const STORAGE_DIR = process.env.TWIN_MEMORY_DIR
-  ?? path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../storage");
+  ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../storage");
 
 export const DB_PATH = process.env.TWIN_DB_PATH ?? path.join(STORAGE_DIR, "twin.db");
 export const FAILOVER_DIR = path.join(STORAGE_DIR, "failover");

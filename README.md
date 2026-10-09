@@ -23,57 +23,56 @@ Twin decouples the *workflow* from the *agent*. Reasoning state, architectural d
 
 ## Setup
 
+twin is a Claude Code plugin, published through the one-plugin `sladjan-tools` marketplace in this repo. Works on macOS, Linux, and Windows (no bash required).
+
 ```sh
-git clone <repo-url> twin
-cd twin
-./setup.sh
+claude plugin marketplace add <owner>/<repo>    # or a local clone: claude plugin marketplace add ./twin
+claude plugin install twin@sladjan-tools
 ```
 
-The script installs dependencies and registers the MCP server with Claude Code. The SQLite database is created automatically on first use.
+On the first session start, a SessionStart hook (`scripts/ensure-deps.mjs`) installs the MCP server's dependencies into the plugin's data directory (`~/.claude/plugins/data/<plugin-id>/`) and links them into `mcp/node_modules`. Later sessions skip the install unless `mcp/package.json` changed. The MCP server is started through `scripts/start-mcp.mjs`, which waits for (or performs) the same install, so it connects even on the first session. The SQLite database is created automatically on first use.
 
-Start a new Claude Code session in any directory and run `/twin-start`.
+Start a Claude Code session in any directory and run `/twin:start`.
 
-## Skills
+## Commands
 
-Skills are project-local — available in Claude Code automatically after cloning.
+Plugin commands are namespaced under `twin:`.
 
-| Skill | Description |
+| Command | Description |
 |---|---|
-| `/twin-start` | Session init — load anchor, reconcile state, propose next step |
-| `/twin-analyse` | Ticket analysis |
-| `/twin-explore` | Architecture exploration |
-| `/twin-design` | Design draft |
-| `/twin-review` | Critical review |
-| `/twin-test-plan` | QA test plan generation |
-| `/twin-anchor` | Save current session state |
-| `/twin-orientate` | Assess and update orientation maps |
+| `/twin:start` | Session init — load anchor, reconcile state, propose next step |
+| `/twin:analyse` | Ticket analysis |
+| `/twin:explore` | Architecture exploration |
+| `/twin:design` | Design draft |
+| `/twin:review` | Critical review (dispatches to the `twin:software-architect` agent) |
+| `/twin:test-plan` | QA test plan generation |
+| `/twin:anchor` | Save current session state |
+| `/twin:orientate` | Assess and update orientation maps |
+| `/twin:weekly-entry` | Team-doc weekly entry for one ticket |
+| `/twin:weekly-report` | Aggregate the week's entries into a report |
 
-Always start with `/twin-start`.
+Always start with `/twin:start`.
 
 ## Storage
 
 ```
-storage/
-  twin.db          # SQLite — primary store (gitignored)
-  failover/        # JSON fallback on DB write failure (gitignored)
+${CLAUDE_PLUGIN_DATA}/      # ~/.claude/plugins/data/<plugin-id>/
+  storage/
+    twin.db                 # SQLite — primary store
+    failover/               # JSON fallback on DB write failure
+  node_modules/             # MCP server dependencies
 ```
 
 **Tables:** `anchors`, `adls`, `orientation_maps`, `policies`, `test_plans`, `knowledge_fts` (FTS search index)
 
-Your knowledge base is local to your machine. To relocate it (e.g. a shared mount):
-
-```sh
-TWIN_MEMORY_DIR=/path/to/storage node mcp/node_modules/.bin/tsx mcp/src/server.ts
-```
-
-Update the `env.TWIN_MEMORY_DIR` entry in `~/.claude.json` to match.
+Your knowledge base is local to your machine. The plugin's `.mcp.json` sets `TWIN_MEMORY_DIR` to `${CLAUDE_PLUGIN_DATA}/storage`. Claude Code deletes the plugin data directory when you uninstall the plugin, so pass `--keep-data` to `claude plugin uninstall` (or back up `twin.db`) if you want to keep the knowledge base. To relocate it (e.g. a shared mount), change `TWIN_MEMORY_DIR` in `.mcp.json`. Without `TWIN_MEMORY_DIR` (e.g. `npm run dev` in `mcp/`), the server uses `storage/` at the repo root.
 
 ## Architecture
 
-Architectural decisions are documented as ADLs (Architectural Design Logs) — stored in the system and queryable via `/twin-start` or directly:
+Architectural decisions are documented as ADLs (Architectural Design Logs) — stored in the system and queryable via `/twin:start` or directly:
 
 ```sh
-sqlite3 storage/twin.db "SELECT adl_id, name, status FROM adls ORDER BY adl_id;"
+sqlite3 <storage>/twin.db "SELECT adl_id, name, status FROM adls ORDER BY adl_id;"
 ```
 
 Key decisions:

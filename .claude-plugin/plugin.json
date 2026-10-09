@@ -1,0 +1,10 @@
+{
+  "name": "twin",
+  "version": "1.0.0",
+  "description": "Structured reasoning workflow for engineering tickets: session anchors, ticket analysis, architecture exploration, design, critical review, test plans, and weekly reports, backed by the twin-anchor MCP knowledge store",
+  "author": {
+    "name": "Sladjan"
+  },
+  "license": "UNLICENSED",
+  "keywords": ["workflow", "anchors", "adl", "orientation", "mcp"]
+}

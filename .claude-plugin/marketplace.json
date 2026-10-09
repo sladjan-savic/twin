@@ -1,0 +1,14 @@
+{
+  "name": "sladjan-tools",
+  "description": "Sladjan's Claude Code plugins",
+  "owner": {
+    "name": "Sladjan"
+  },
+  "plugins": [
+    {
+      "name": "twin",
+      "source": "./",
+      "description": "Structured reasoning workflow for engineering tickets, backed by the twin-anchor MCP knowledge store"
+    }
+  ]
+}

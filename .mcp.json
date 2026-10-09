@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "twin-anchor": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/start-mcp.mjs",
+        "${CLAUDE_PLUGIN_ROOT}/mcp/src/server.ts"
+      ],
+      "env": {
+        "TWIN_MEMORY_DIR": "${CLAUDE_PLUGIN_DATA}/storage"
+      }
+    }
+  }
+}

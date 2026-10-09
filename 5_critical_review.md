@@ -4,7 +4,7 @@ MODE: Review
 
 ## Dispatch
 
-Run this review via the `software-architect` subagent (Agent tool) — not inline in the main session.
+Run this review via the `twin:software-architect` subagent (Agent tool; shipped in this plugin's `agents/`) — not inline in the main session.
 
 Rationale: the design was authored in this session. A detached reviewer with no authorship stake avoids rubber-stamping its own work.
 

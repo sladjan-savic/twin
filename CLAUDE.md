@@ -19,9 +19,11 @@ After editing `mcp/src/**`, restart the MCP connection (new session, or whatever
 - **Generated** (weekly entries/reports, test plans, orientation maps, stage outputs): default to regenerating from spec, not surgical `Edit`. Surgical edits drift from what the spec would now produce.
 - **Authored** (code, ADLs after initial save, `CLAUDE.md`, stage docs `0_*.md`–`8_*.md` themselves): surgical `Edit` after grep/symbol lookup is correct.
 
+That rule file loads only for sessions working *on* this repo. Plugins don't load rules or `CLAUDE.md`, so the user-facing version is folded into each artifact-producing command in `commands/` as an "Editing this output later" section. Keep the two in sync.
+
 ## Stage docs (`0_session_init.md` … `8_weekly_report.md`)
 
-These are the methodology specs the `twin-*` skills follow — authored, not generated. Numbering is sequential by workflow stage, not by creation date. Changing one changes behavior for every future session that invokes the corresponding skill; treat it like changing a shared function signature.
+These are the methodology specs the `/twin:*` commands (`commands/*.md`) follow — authored, not generated. Numbering is sequential by workflow stage, not by creation date. Changing one changes behavior for every future session that invokes the corresponding skill; treat it like changing a shared function signature.
 
 ## ADL log
 
